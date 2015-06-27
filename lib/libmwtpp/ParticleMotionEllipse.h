@@ -4,7 +4,6 @@
 #include "ComplexTimeSeries.h"
 #include "dmatrix.h"
 #include "MWTransform.h"
-using namespace std;
 using namespace SEISPP;
 /*! \brief Particle motion ellipse computed by Multiwavelet method.
 
