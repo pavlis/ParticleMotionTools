@@ -48,10 +48,42 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         PMTimeSeries(MWTBundle& d, int band,int timesteps, int avlen);
         /*! Standard copy constructor. */
         PMTimeSeries(const PMTimeSeries& parent);
+        /*! \brief Return the ellipse by sample number.
+
+          This object encapsulates the concept of time-variable
+        particle motion parameterized by an ellipse measured on
+        a regular grid in time.   This method returns the ellipse
+        by a time series type index.
+
+        \param i sample number to return.
+        \exception Throws a SeisppError object if i is out of range. 
+        */
         ParticleMotionEllipse& ellipse(int i);
+        /*! \brief Return the error statistics by sample number.
+
+          This object encapsulates the concept of time-variable
+        particle motion parameterized by an ellipse measured on
+        a regular grid in time.   This method returns an object
+        that contains all error estimates computed by the 
+        multiwavelet tranform from a 3C seismogram.
+
+        \param i sample number to return.
+        \exception Throws a SeisppError object if i is out of range. 
+        */
         ParticleMotionError errors(int i);
+        /*! Zero any data defined by a gap. 
+
+          Warning this is not fully implemented. */
         void zero_gaps();
+        /*! Standard assignment operator */
         PMTimeSeries& operator=(const PMTimeSeries& parent);
+        /*! \brief Output data as ascii text.
+
+          The intent of this procedure is to output the data from
+          this object in a format that could be read to reconstruct
+          it eventually.  At present it is a debug routine that
+          just dumps the contents in a readable form.
+          */
         friend ostream& operator<<(ostream& os, PMTimeSeries& d);
     private:
         vector<ParticleMotionEllipse> pmdata;
