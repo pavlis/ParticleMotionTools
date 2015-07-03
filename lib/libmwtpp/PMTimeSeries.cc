@@ -41,6 +41,13 @@ void PMTimeSeries::post_attributes_to_metadata()
     this->put("nsamp",ns);
     this->put("samprate",1.0/dt);
 }
+PMTimeSeries::PMTimeSeries() : Metadata(), BasicTimeSeries()
+{
+    averaging_length=0;
+    f0=0.0;
+    fw=0.0;
+    decfac=0;
+}
 
 PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
     : Metadata(dynamic_cast<Metadata&>(d))

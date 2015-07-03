@@ -1,5 +1,8 @@
 #ifndef _PMTimeSeries_h_ 
 #define _PMTimeSeries_h_
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include "ComplexTimeSeries.h"
 #include "MWTransform.h"
 #include "ParticleMotionEllipse.h"
@@ -7,6 +10,8 @@
 class PMTimeSeries : public BasicTimeSeries, public Metadata
 {
     public:
+        /*! Default constructor - initializes everything to zeros*/
+        PMTimeSeries();
         /*! Construct sample by sample for a specified band. 
 
           This will compute particle motions on a sample by 
@@ -94,5 +99,17 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         double f0,fw;
         int decfac;
         void post_attributes_to_metadata();
+        friend class boost::serialization::access;
+        template<class Archive>
+                void serialize(Archive & ar, const unsigned int version)
+        {
+            ar & boost::serialization::base_object<Metadata>(*this);
+            ar & boost::serialization::base_object<BasicTimeSeries>(*this);
+            ar & pmdata;
+            ar & pmerr;
+            ar & f0;
+            ar & fw;
+            ar & decfac;
+        };
 };
 #endif

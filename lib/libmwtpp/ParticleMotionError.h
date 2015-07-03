@@ -1,4 +1,6 @@
 #include <iostream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 using namespace std;
 /* \brief Data object to hold multiwavelet generated error estimates.
 
@@ -48,4 +50,22 @@ public:
       no newline character at the end.   The order is the same as the 
       list of attributes in the class above. */
     friend ostream& operator<<(ostream& os, ParticleMotionError& pme);
+private:
+    friend class boost::serialization::access;
+    template<class Archive>
+        void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & dtheta_major;
+        ar & dphi_major;
+        ar & dtheta_minor;
+        ar & dphi_minor;
+        ar & dmajornrm;
+        ar & dminornrm;
+        ar & delta_rect;
+        ar & ndgf_major;
+        ar & ndgf_minor;
+        ar & ndgf_rect;
+        ar & ndgf_major_amp;
+        ar & ndgf_minor_amp;;
+    };
 };
