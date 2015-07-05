@@ -1,9 +1,13 @@
 #ifndef _ParticleMotionEllipse_h_
 #define _ParticleMotionEllipse_h_
+#include <fstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include "TimeWindow.h"
 #include "ComplexTimeSeries.h"
 #include "dmatrix.h"
 #include "MWTransform.h"
+
 using namespace SEISPP;
 /*! \brief Particle motion ellipse computed by Multiwavelet method.
 
@@ -102,6 +106,16 @@ public:
       Produces a single ascii line with major(1 to 3) and minor (1 to 3) scaled by
       amplitudes (i.e. 6 columns of ascii data with blank separators. */
     friend ostream& operator<<(ostream& os, ParticleMotionEllipse& pme);
+private:
+    friend class boost::serialization::access;
+    template<class Archive>
+            void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & majornrm;
+        ar & minornrm;
+        ar & major;
+        ar & minor;
+    };
 };
 
 #endif
