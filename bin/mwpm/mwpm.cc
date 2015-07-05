@@ -2,29 +2,33 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include "seispp.h"
 #include "dbpp.h"
 #include "ThreeComponentSeismogram.h"
 #include "PfStyleMetadata.h"
+#include "PMTimeSeries.h"
+using namespace SEISPP;
 void save_pmts(PMTimeSeries& d,string dir, string dfile_base,int band)
 {
-    const string base_error("Error in save_pmts procedure:  ")
+    const string base_error("Error in save_pmts procedure:  ");
     try {
         string full_fname;
         string sta=d.get_string("sta");
         long int evid=d.get_long("evid");
         stringstream ss;
-        ss << full_name <<"/"<<dfile_base<<"_"<<sta<<"_"<<evid<<".pmts";
+        ss << dir <<"/"<<dfile_base<<"_"<<sta<<"_"<<evid<<".pmts";
         ofstream ofp;
-        ofp.open(full_name.str(),ios::out);
+        full_fname=ss.str();
+        ofp.open(full_fname.c_str(),ios::out);
         if(ofp.fail()) throw SeisppError(base_error
-                + "open failed for ofstream = "+full_name.c_str());
+                + "open failed for ofstream = "+full_fname);
         boost::archive::text_oarchive oa(ofp);
         oa << d;
         ofp.close();
     }catch(...){throw;};
 }
-bool dt_ok(BasicTimeSeries& d,double target_dt,double tolerance)
+bool dt_ok(ThreeComponentSeismogram& d,double target_dt,double tolerance)
 {
     double ddt=fabs(d.dt-target_dt);
     ddt /= target_dt;
@@ -33,6 +37,38 @@ bool dt_ok(BasicTimeSeries& d,double target_dt,double tolerance)
     else
         return false;
 }
+void build_working_view(DatascopeHandle& dbh, string subset_string)
+{
+    try{
+        cout << "Building database working view"<<endl;
+        DatascopeHandle ljhandle(dbh);
+        dbh.lookup("event");
+        dbh.natural_join("origin");
+        dbh.subset("orid==prefor");
+        dbh.natural_join("assoc");
+        dbh.natural_join("arrival");
+        cout << "Catalog view table size="<<dbh.number_tuples()<<endl;
+        ljhandle.lookup("wfprocess");
+        ljhandle.natural_join("evlink");
+        ljhandle.natural_join("sclink");
+        cout << "Number of waveform entries in wfprocess="
+            << ljhandle.number_tuples()<<endl;
+        list<string> jk;
+        jk.push_back("evid");
+        jk.push_back("sta");
+        dbh.join(ljhandle,jk,jk);
+        jk.clear();
+        jk.push_back("sta");
+        dbh.join(string("site"),jk,jk);
+        cout << "Working table size="<<dbh.number_tuples()<<endl;
+        if(subset_string.size()>0 && subset_string!="none")
+        {
+            dbh.subset(subset_string);
+            cout << "Working table size after applying condition "
+                << subset_string << "="<<dbh.number_tuples()<<endl;
+        }
+    }catch(...){throw;};
+}
 void usage()
 {
     cerr << "mwpm db [-s subset -pf pffile]"<<endl
@@ -40,11 +76,12 @@ void usage()
         <<endl
         << "Use -s to subset working view"<<endl;;
 }
+bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
     /* As usual first parse the command line */
     if(argc<2) usage();
-    int i;
+    int i,j;
     string dbname(argv[1]);
     string sstr("none");
     string pffile("mwpm.pf");
@@ -125,9 +162,7 @@ int main(int argc, char **argv)
         if(avlen>1)
             pmdt=control.get_int("particle_motion_sampling_decimation_factor");
 
-
         AttributeMap am("css3.0");
-        --TBD--
         DatascopeHandle dbh(dbname,true);
         /* This acts like a subroutine and alters dbh to 
            become the handle to the working view */
@@ -136,7 +171,7 @@ int main(int argc, char **argv)
         if(sstr=="none")
             cout <<endl;
         else
-            cout "using subset condition="<<sstr<<endl;
+            cout <<"using subset condition="<<sstr<<endl;
         long nrows=dbh.number_tuples();
         cout << "Number of rows in input view="<<nrows<<endl;
 
@@ -147,10 +182,10 @@ int main(int argc, char **argv)
                 d(new ThreeComponentSeismogram(dbh,datamdl,am));
             /* This helper (above) returns false if the data
                sample rate is out of tolerance */
-            if(dt_ok(d,target_dt,dt_tolerance))
+            if(dt_ok(*d,target_dt,dt_tolerance))
             {
                 if(align_with_t0)
-                d->put(alignkey,d->t0+t0_offset)
+                d->put(alignkey,d->t0+t0_offset);
                 /* We always use this procedure that converst the 
                 data to relative time using a phase as a reference.
                 Note the logic above allows this to be a reference
