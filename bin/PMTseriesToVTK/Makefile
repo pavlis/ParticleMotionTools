@@ -1,14 +1,11 @@
-BIN=test
 
-cflags=-g
-cxxflags=-g
-ldflags=-L$(ANTELOPE)/contrib/static
-ldlibs=-lmwtpp -lseispp -lgclgrid -lmultiwavelet -lgenloc $(DBLIBS) $(TRLIBS) -lperf
-SUBDIR=/contrib
+all Include install installMAN pf relink tags test :: FORCED
+	@-if localmake_config boost ; then \
+	    $(MAKE) -f Makefile2 $@ ; \
+	fi
 
-include $(ANTELOPEMAKE) 
+clean uninstall :: FORCED
+	$(MAKE) -f Makefile2 $@
 
-OBJS=PMTseriesToVTK.o vtp_writer.o
-$(BIN) : $(OBJS)
-	$(RM) $@
-	$(CXX) $(CCFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
+FORCED:
+
