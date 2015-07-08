@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include "dmatrix.h"
+#include "perf.h"
 #include "ParticleMotionEllipse.h"
 #include "PMTimeSeries.h"
 using namespace std;
@@ -23,12 +24,12 @@ dmatrix close_ellipse(dmatrix& dm)
     for(j=0;j<3;++j)
         for(i=0;i<nr;++i)
             result(i,j)=dm(i,j);
-    for(j=0;j<3;++j) resul(nr,j)=dm(0,j);
+    for(j=0;j<3;++j) result(nr,j)=dm(0,j);
     return result;
 }
-void WriteEllipses(vector<PMTimeSeries>* d,
+void WriteEllipses(vector<PMTimeSeries>& d,
         double t, double scale, int np_per_ellipse,
-        ofstream* out)
+        ofstream& out)
 {
     try{
         int i;
@@ -43,7 +44,7 @@ void WriteEllipses(vector<PMTimeSeries>* d,
         {
             try{
                 i=dptr->sample_number(t);
-                ParticleMotionEllipse pme();  // assume initializes to 0;
+                ParticleMotionEllipse pme;  // assume initializes to 0;
                 try {
                     pme=dptr->ellipse(i);
                 }catch(SeisppError& serr)
@@ -59,7 +60,7 @@ void WriteEllipses(vector<PMTimeSeries>* d,
                 /* Need to add a point to close the ellipse figure */
                 pm=close_ellipse(pm);
                 /* A simple way to scale the ellipse */
-                pm*=scale;
+                pm=scale*pm;
                 points.push_back(pm);
                 TotalNumberPoints+=pm.columns();
                 ++NumberPMCurves;

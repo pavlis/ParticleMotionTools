@@ -2,7 +2,7 @@ BIN=test
 
 cxxflags=-g
 ldflags=-L$(ANTELOPE)/contrib/static
-ldlibs=-lmwtpp -lseispp -lgclgrid -lmultiwavelet -lgenloc $(DBLIBS) $(TRLIBS) -lperf
+ldlibs=-lmwtpp -lseispp -lgclgrid -lmultiwavelet -lgenloc $(DBLIBS) $(TRLIBS) -lperf -lboost_serialization
 SUBDIR=/contrib
 
 include $(ANTELOPEMAKE) 

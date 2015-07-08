@@ -5,8 +5,60 @@
 #include <sstream>
 #include "stock.h"
 #include "seispp.h"
+#include "HFArray.h"
+#include "PMTimeSeries.h"
+#include "TimeWindow.h"
+#include "PfStyleMetadata.h"
+#include "AttributeMap.h"
 using namespace std;
 using namespace SEISPP;
+vector<PMTimeSeries> read_pmdata(string listfile)
+{
+        vector<PMTimeSeries> result;
+        ifstream lfin;
+        lfin.open(listfile.c_str());
+        if(!lfin.good())
+        {
+            cerr << "Open failed on input list file="<<listfile<<endl
+                << "Cannot recover - exiting"<<endl;
+            exit(-1);
+        }
+        char fname[1024];
+        while(lfin.getline(fname,1024))
+        {
+            ifstream ifs(fname);
+            if(ifs.good())
+            {
+                boost::archive::text_iarchive ar(ifs);
+                PMTimeSeries pmtsin;
+                try {
+                    ar >> pmtsin;
+                    result.push_back(pmtsin);
+                }catch(std::exception& err)
+                {
+                    cerr << "Error reading archive file = "<<fname<<endl
+                        << "Message posted by boost::archive:  "
+                        <<err.what()<<endl;
+                }
+                lfin.close();
+                ifs.close();
+            }
+            else
+            {
+                cerr << "Open failure for input archive file="
+                    << fname <<endl
+                    << "File skipped.   Trying net on list "<<endl;
+            }
+        }
+        lfin.close();
+        return result;
+}
+        
+/* This procedure is in vtp_writer.cc*/
+void WriteEllipses(vector<PMTimeSeries>& d,
+        double t, double scale, int np_per_ellipse,
+                ofstream& out);
+
 void write_animation_files(vector<PMTimeSeries>& pmdv,
         TimeWindow& dtw,double scale, int npoints_ellipse,
         string dir, string fbase, string pvdfile)
@@ -32,7 +84,7 @@ void write_animation_files(vector<PMTimeSeries>& pmdv,
             << dt<<endl;
         int i;
         double t;
-        for(int i=0,t=dtw.ts;i<number_time_steps;++i)
+        for(int i=0,t=dtw.start;i<number_time_steps;++i)
         {
             stringstream ss;
             ss << dir <<"/"<<fbase<<"_"<<filenumber<<fext;
@@ -47,7 +99,7 @@ void write_animation_files(vector<PMTimeSeries>& pmdv,
             else
             {
                 try{
-                    WriteEllipses(pmdv,t,scale,npoints_ellipse,fout);
+                    WriteEllipses(pmdv,dtw.start,scale,npoints_ellipse,fout);
                 }catch(SeisppError& serr)
                 {
                     cerr << "WriteTimeWindow threw this error for time step "
@@ -57,7 +109,7 @@ void write_animation_files(vector<PMTimeSeries>& pmdv,
                 }
                 allfnames.push_back(fname);
                 ++filenumber;
-                tw=tw.shift(dt);
+                dtw=dtw.shift(dt);
                 fout.close();
             }
         }
@@ -76,7 +128,6 @@ void write_animation_files(vector<PMTimeSeries>& pmdv,
             << "<Collection>"<<endl;
         
         list<string>::iterator iptr;
-        int i;
         for(i=0,iptr=allfnames.begin();iptr!=allfnames.end();++iptr,++i)
         {
             fout << "<DataSet timestep=\"" << i <<"\" file=\""
@@ -96,11 +147,11 @@ double find_max_amplitude(PMTimeSeries& d)
         ParticleMotionEllipse e=d.ellipse(i);
         if(e.majornrm>maxamp) maxamp=e.majornrm;
     }
-    return e;
+    return maxamp;
 }
 
 
-void show_scaling(<PMTimeSeries>& pmdv,
+void show_scaling(vector<PMTimeSeries>& pmdv,
         double initial_scale_factor)
 {
     vector<double> ranges,low,high,work;
@@ -142,6 +193,28 @@ void show_scaling(<PMTimeSeries>& pmdv,
     for(i=0;i<3;++i)
         cout << "x"<<i+1<<":  "<<low[i]<<", "<<high[i]<<", "<<ranges[i]<<endl;
 }
+void load_cartesian(vector<PMTimeSeries>& d, RegionalCoordinates& coords)
+{
+    try {
+        vector<PMTimeSeries>::iterator dptr;
+        for(dptr=d.begin();dptr!=d.end();++dptr)
+        {
+            double lat,lon,elev,r;
+            lat=dptr->get_double("site.lat");
+            lon=dptr->get_double("site.lon");
+            elev=dptr->get_double("site.elev");
+            /* Because of site qualifier assume these degree units */
+            lat=rad(lat);
+            lon=rad(lon);
+            r=r0_ellipse(lat)+elev;
+            Cartesian_point cp=coords.cartesian(lat,lon,r);
+            dptr->put("x",cp.x1);
+            dptr->put("y",cp.x2);
+            dptr->put("z",cp.x3);
+        }
+    }catch(...){throw;};
+}
+
 
 void usage()
 {
@@ -172,7 +245,7 @@ int main(int argc, char **argv)
             usage();
     }
     try {
-        PfStyleMetadata md(pffile);
+        PfStyleMetadata md=pfread(pffile);
         bool sap_mode=md.get_bool("small_aperture_array_mode");
         HFArray *array;
         if(sap_mode)
@@ -180,12 +253,12 @@ int main(int argc, char **argv)
             string array_file=md.get_string("array_geometry_file");
             array=new HFArray(array_file);
         }
-        MetadataList tracemdl=get_mdlist(control,"trace_mdlist");
-        MetadataList ensemblemdl=get_mdlist(control,"ensemble_mdlist");
+        MetadataList tracemdl=get_mdlist(md,"trace_mdlist");
+        MetadataList ensemblemdl=get_mdlist(md,"ensemble_mdlist");
         AttributeMap am("css3.0");
         /* This defines the relative time window , which must 
-           be shorter than data available */
-        TimeWindow tw_relative;
+           be shorter or equal to data available */
+        TimeWindow dtw;
         dtw.start=md.get_double("display_window_start_time");
         dtw.end=md.get_double("display_window_end_time");
         /* This defines file names for output files.   
@@ -219,8 +292,8 @@ int main(int argc, char **argv)
             /* In small aperture array mode we override any
                receiver position information with coordinate data
                stored in the HFArray object */
-            for(dptr=d->begin();
-                    dptr!=d->end();++dptr)
+            for(dptr=d.begin();
+                    dptr!=d.end();++dptr)
             {
                 try {
                     string sta=dptr->get_string("sta");
@@ -230,7 +303,7 @@ int main(int argc, char **argv)
                     dptr->put("site.lat",deg(gp.lat));
                     dptr->put("site.lon",deg(gp.lon));
                     /* elev has to be computed from radius like this.
-                       This is repeated in ParticleMotionData, which is
+                       This is repeated elsewhere, which is
                        inefficient, but necessary to have this work for
                        both small aperture and large arrays */
                     double elev;
@@ -249,14 +322,14 @@ int main(int argc, char **argv)
         /* This procedure loads metadata x,y,z attributes
            as Cartesian (km) coordinates using site.lat, site.lon,
            and site.elev.   */
-        load_cartesian(d);
+        load_cartesian(d,coords);
         double newscale;
         newscale=PMscale_factor;
         /* Scan the data for largest amplitude and set the scale
            factor interactively. */
         string ques;
         do {
-            show_scaling(pmdv,newscale);
+            show_scaling(d,newscale);
             cout << "Answer y to accept this scale "
                     << "(anything else to try again): "
                     <<endl;
@@ -269,7 +342,7 @@ int main(int argc, char **argv)
         }while(ques!="y");
         /* Now we write the string of files for animation.   
            This procedure does that */
-        write_animation_files(pmdv,dtw,newscale,npoints,
+        write_animation_files(d,dtw,newscale,npoints,
                 animate_file_directory,animate_file_base,pvd_file);
     }catch(SeisppError& serr)
     {
