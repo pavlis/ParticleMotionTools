@@ -40,17 +40,54 @@ HFArray::HFArray(string fname)
         xs[2]=z;
         stations.insert(pair<string,vector<double> >(sta,xs));
     }
-    //DEBUG
-    /*
-    map<string,vector<double> >::iterator it;
-    for(it=stations.begin();it!=stations.end();++it)
-    {
-        cout << it->first ;
-        for(i=0;i<3;++i) cout <<" "<<it->second[i];
-        cout <<endl;
-    }
-    */
 }
+HFArray::HFArray(DatascopeHandle& dbh,string net)
+{
+    vector<double> xs;
+    /* We do this to allow setting components */
+    int i;
+    for(i=0;i<3;++i) 
+        xs.push_back(0.0);
+    try{
+        dbh.lookup("site");
+        if(net.length()>0)
+        {
+            dbh.natural_join("snetsta");
+            string sstr("snet=~/");
+            sstr=sstr+net+"/";
+            dbh.subset(sstr);
+        }
+        dbh.rewind();
+        int n=dbh.number_tuples();
+        for(i=0;i<n;++i,++dbh)
+        {
+            string sta,refsta;
+            sta=dbh.get_string("sta");
+            refsta=dbh.get_string("refsta");
+            xs[0]=dbh.get_double("deast");
+            xs[1]=dbh.get_double("dnorth");
+            xs[2]=dbh.get_double("elev");
+            stations.insert(pair<string,vector<double> >(sta,xs));
+            if(sta==refsta)
+            {
+                double olat,olon;
+                olat=dbh.get_double("lat");
+                olon=dbh.get_double("lon");
+                olat=rad(olat);
+                olon=rad(olon);
+                /* not using this for now - force
+                   reference elevation to sea level
+                double oelev;
+                oelev=dbh.get_double("elev");
+                double oradius=r0_ellipse(olat)+oelev;
+                */
+                coords=RegionalCoordinates(olat,olon,r0_ellipse(olat),0.0);
+            }
+        }
+    }catch(...){throw;};
+}
+
+
 
 vector<double> HFArray::x(string sta)
 {
