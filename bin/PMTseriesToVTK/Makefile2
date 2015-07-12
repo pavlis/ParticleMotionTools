@@ -1,4 +1,4 @@
-BIN=test
+BIN=PMTseriesToVTK
 
 cxxflags=-g
 ldflags=-L$(ANTELOPE)/contrib/static
