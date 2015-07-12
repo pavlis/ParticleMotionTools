@@ -75,6 +75,7 @@ void usage()
         << "db is assumed to contain 3c data output of extract_event program"
         <<endl
         << "Use -s to subset working view"<<endl;;
+    exit(-1);
 }
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
