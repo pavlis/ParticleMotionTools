@@ -1,0 +1,36 @@
+trace_mdlist &Tbl{
+time real
+endtime real
+origin.lat real
+origin.lon real
+origin.depth real
+origin.time real
+site.lat real
+site.lon real
+site.elev real
+site.dnorth real
+site.deast real
+arrival.time real
+site.refsta string
+assoc.phase string
+nsamp int
+samprate real
+}
+ensembler_mdlist &Tbl{
+    evid int
+}
+process_window_start_time -10.0
+process_window_end_time 30.0
+full_window_file full_particle_motion.vtp
+animate_file_base worms
+pvd_file worms.pvd
+animate_file_directory ./frames
+animate_dt 0.1
+animate _time_window_length 5.0
+filter_data true
+BRTT_filter_definition DEMEAN
+origin_latitude 44.3521
+origin_longitude -103.7506
+origin_depth 0.0
+origin_azimuth_north 0.0
+PMscale_factor 1000.0
