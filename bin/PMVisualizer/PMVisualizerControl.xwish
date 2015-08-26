@@ -1,0 +1,157 @@
+#!/bin/sh
+# \
+    exec $ANTELOPE/bin/awish $0 -- "$@"
+package require BLT
+package require Datascope
+
+proc save_pffile {} {
+    set fd [open "PMVisualizerGUI.pf" w]
+    puts $fd [pmconverter_control_pf]
+    close $fd
+}
+
+proc pmconverter_control_options {} {
+    set w .pmconverter_control
+
+    if { [winfo exists $w] } { 
+	wm deiconify $w
+	blt::winop raise $w
+	return
+    } 
+
+    toplevel $w
+    wm title $w "Pf pmconverter_control"
+    wm iconname $w "Pf pmconverter_control"
+    global pmconverter_control
+
+    if { ! [info exists pmconverter_control(Already-Initialized)] } {
+	pmconverter_control_default
+    }
+
+
+    checkbutton $w.filter_data \
+	-anchor w \
+	-variable pmconverter_control(filter_data) \
+	-text "Filter"
+
+
+    LblEntry $w.brtt_filter_definition \
+	-label "FilterString" \
+	-textvariable pmconverter_control(brtt_filter_definition) 
+
+
+    LblEntry $w.process_window_start_time \
+	-label "Start" \
+	-textvariable pmconverter_control(process_window_start_time) 
+
+
+    LblEntry $w.process_window_end_time \
+	-label "End" \
+	-textvariable pmconverter_control(process_window_end_time) 
+
+
+    LblEntry $w.animate_dt \
+	-label "AnimationTimeStep" \
+	-textvariable pmconverter_control(animate_dt) 
+
+
+    LblEntry $w.animate_time_window_length \
+	-label "AnimationWindowLength" \
+	-textvariable pmconverter_control(animate_time_window_length) 
+
+
+    LblEntry $w.animate_file_base \
+	-label "AnimationFileBaseName" \
+	-textvariable pmconverter_control(animate_file_base) 
+
+
+    LblEntry $w.pvd_file \
+	-label "pvd_file" \
+	-textvariable pmconverter_control(pvd_file) 
+
+
+    LblEntry $w.animate_file_directory \
+	-label "AnimationFileDirectory" \
+	-textvariable pmconverter_control(animate_file_directory) 
+
+
+    LblEntry $w.full_window_file \
+	-label "FullWindowFile" \
+	-textvariable pmconverter_control(full_window_file) 
+
+
+    LblEntry $w.pMscale_factor \
+	-label "PMscale" \
+	-textvariable pmconverter_control(pMscale_factor) 
+
+
+    button $w.default -text Default -command "pmconverter_control_default" 
+    button $w.dismiss -text Dismiss -command "wm withdraw $w" -bg red -fg white
+
+    set col 0
+    set row 0
+    blt::table $w \
+	$w.filter_data [incr row],$col -fill x -anchor w \
+	$w.brtt_filter_definition [incr row],$col -fill x -anchor w \
+	$w.process_window_start_time [incr row],$col -fill x -anchor w \
+	$w.process_window_end_time [incr row],$col -fill x -anchor w \
+	$w.animate_dt [incr row],$col -fill x -anchor w \
+	$w.animate_time_window_length [incr row],$col -fill x -anchor w \
+	$w.animate_file_base [incr row],$col -fill x -anchor w \
+	$w.pvd_file [incr row],$col -fill x -anchor w \
+	$w.animate_file_directory [incr row],$col -fill x -anchor w \
+	$w.full_window_file [incr row],$col -fill x -anchor w \
+	$w.pMscale_factor [incr row],$col -fill x -anchor w \
+	$w.default	20,0 -fill x \
+	$w.dismiss	20,1 -cspan 10 -fill x
+
+}
+
+proc pmconverter_control_pf {} {
+    global pmconverter_control
+
+
+    if { ! [info exists pmconverter_control(Already-Initialized)] } {
+	pmconverter_control_default
+    }
+
+    append pf "filter_data	$pmconverter_control(filter_data)\n"
+    append pf "BRTT_filter_definition	$pmconverter_control(brtt_filter_definition)\n"
+    append pf "process_window_start_time	$pmconverter_control(process_window_start_time)\n"
+    append pf "process_window_end_time	$pmconverter_control(process_window_end_time)\n"
+    append pf "animate_dt	$pmconverter_control(animate_dt)\n"
+    append pf "animate_time_window_length	$pmconverter_control(animate_time_window_length)\n"
+    append pf "animate_file_base	$pmconverter_control(animate_file_base)\n"
+    append pf "pvd_file	$pmconverter_control(pvd_file)\n"
+    append pf "animate_file_directory	$pmconverter_control(animate_file_directory)\n"
+    append pf "full_window_file	$pmconverter_control(full_window_file)\n"
+    append pf "pMscale_factor	$pmconverter_control(pMscale_factor)\n"
+
+    return $pf
+}
+
+proc pmconverter_control_default {} {
+    global pmconverter_control
+
+    set pmconverter_control(filter_data) 1
+    set pmconverter_control(brtt_filter_definition) DEMEAN
+    set pmconverter_control(process_window_start_time) -10.0
+    set pmconverter_control(process_window_end_time) 90.0
+    set pmconverter_control(animate_dt) 0.1
+    set pmconverter_control(animate_time_window_length) 5.0
+    set pmconverter_control(animate_file_base) worms
+    set pmconverter_control(pvd_file) AnimatePM.pvd
+    set pmconverter_control(animate_file_directory) ./PMframes
+    set pmconverter_control(full_window_file) FullWindowPM.vtp
+    set pmconverter_control(pMscale_factor) 1.0
+    set pmconverter_control(Already-Initialized) 1
+
+}
+
+# Remove the following lines after testing
+lappend auto_path $env(ANTELOPE)/data/tcl/library
+
+button .summon -text Summon -command pmconverter_control_options
+button .save -text Save -command save_pffile
+button .quit -text Quit -command "destroy ."
+pack .summon .save .quit

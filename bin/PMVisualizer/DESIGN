@@ -1,0 +1,44 @@
+This is a gui companion for the ParticleMotionVTK converter.  It passes
+data to that program by running that program in engine mode.   The 
+interactive front end is needed to tweek filtering and (most importantly) 
+the animation window.   
+
+Needs a mode to switch between absolute time and an arrival time
+referenc (event mode)
+
+usage:
+PMVisualizer db (-e evid | -ts t0 )  (-3C guide_sta |  -comp XXX ) [-pf pffile]
+
+The idea is that -3C will display 3c set for one station while -comp
+will display an ensemble showing only component XXX.  
+
+Base time window for read will be defined in pffile.
+
+Time window in -ts mode should come from pf.
+
+PMScale is a critical factor that will require interactive tweeking.
+The other is the filter to apply to the data.   Both must be in the gui
+along with the time window to be animated.  For the scale factor it will
+be essential to post some kind of statistics like the VTK converter does
+to guide the user to select the scale factor.  This is probably most
+easily done by writing to stdout, although a ore fancy alternative is to pop 
+up a text window that is updated as one changes the selected scale factor.
+
+Engine mode approach requires writing a pf file to define ParticleMotionVTKConvert.   Probably in something like /tmp/ParticleMotionVTKConverter.pf 
+Probably safer to use ./tmp
+
+Pseudocode:
+
+1) crack command line 
+2) load PFStyleMetadata from pffile - default should probably be 
+in a stardard place)
+3) open db and build working view
+4) load data
+5) subset for -3c or -comp
+6) Launch child of TimeWindowPicker with required decorations
+7) save pf to driver ParticleMotionVTKConverter
+8) run ParticleMotionVTKConverter
+
+Note this same gui may provide a mechanism to drive a shell script to 
+drive mwpm followed by PMTseriesToVTK.  For starters will keep them 
+separate.
