@@ -34,3 +34,36 @@ origin_longitude -103.7506
 origin_depth 0.0
 origin_azimuth_north 0.0
 PMscale_factor 1000.0
+StationChannelMap       &Arr{
+   SDV	&Tbl{
+        BHE_00 0 0
+        BHN_00 1 0
+        BHZ_00 2 0
+        BHE_10 0 1
+        BHN_10 1 1
+        BHZ_10 2 1
+        HHE_10 0 2
+        HHN_10 1 2
+        HHZ_10 2 2
+        HHE_20 0 3
+        HHN_20 1 3
+        HHZ_20 2 3
+    }
+    default     &Tbl{
+        HHE 0 0
+        HHN 1 0
+        HHZ 2 0
+        HLE 0 1
+        HLN 1 1
+        HLZ 2 1
+        BHE 0 2
+        BHN 1 2
+        BHZ 2 2
+	EHE 0 3
+	EHN 1 3
+	EHZ 2 3
+        LHE 0 4
+        LHN 1 4
+        LHZ 2 4
+    }
+}
