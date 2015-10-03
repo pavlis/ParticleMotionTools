@@ -5,9 +5,9 @@ class PMVisualizerGUI : public TimeWindowPicker
     public:
         PMVisualizerGUI();
         PMVisualizerGUI(Metadata& md);
-        void load_pfdata(Metadata& md);
+        void load_pfdata(PfStyleMetadata& md);
         /* Intentionally not a reference because copy is altered*/
-        void filter_and_plot(TimeSeriesEnsemble d);
+        void filter_and_plot(TimeSeriesEnsemble& d);
         Metadata get_parameters()
         {
             return guimd;
@@ -18,7 +18,7 @@ class PMVisualizerGUI : public TimeWindowPicker
         };
     private:
         Metadata winmd;
-        Metadata guimd;
+        PfStyleMetadata guimd;
         string filtername;
 };
 
