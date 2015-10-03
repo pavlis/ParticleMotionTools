@@ -19,7 +19,6 @@ string antelope_contrib_root_pf()
     else
     {
         result=string(ant);
-        free(ant);
         result=result+"/contrib/data/pf";
     }
     return result;
@@ -96,25 +95,43 @@ TimeSeriesEnsemble load_time_window(DatascopeHandle& dbh, string sstr,
             d=TimeSeriesEnsemble(dbh,tw,string("none"),sstr,true,true,false);
         else
             d=TimeSeriesEnsemble(dbh,tw,sstr,string("none"),true,true,false);
+        if(d.member.size()<=0) throw SeisppError(string("load_time_window:  ")
+                + "No data found for chan="+sstr+" in requested time interval");
+        /* Convert the ensemble to relative time - limitation of the Seisw
+           widget makes this necessary.   Assume all have the same t0 */
+        double tshift = d.member[0].t0;
+        // post tshift to ensemble metadata - we need it to restore
+        // times to absolute 
+        d.put("tshift",tshift);
+        vector<TimeSeries>::iterator dptr;
+        for(dptr=d.member.begin();dptr!=d.member.end();++dptr)
+            dptr->ator(tshift);
+
+        if(SEISPP_verbose)
+        {
+            cout << "Loaded ensemble with "<<d.member.size()<<" seismograms"
+                <<endl << "These will plot in the pick window"<<endl;
+            cout << "0 time on plot is "<<strtime(tshift)<<endl;
+        }
         return d;
     }catch(...){throw;};
 }
 
 /* This routine execs the ParticleMtionVTKConverter program in engine mode
    assembling all the pieces needed to make it run consistently with the gui.
+   This version of the procedure is for event_mode only. 
 
 Arguments:
     dbname - Datascope db name passed to ParticleMotionVTKConverter
-    tw - time window (relative if event_mode is true, absolute otherwise)
+    tw - relative time window around a phase for this event
     vtkparams - parameters returned by gui interface
-    event_mode - critical switch controlling behaviour.  when true use  times
-       defined by a phase arrival for event id evid
     evid - event id in event mode (ignored if event_mode is false)
+    filter_used - BRTT filter definition to apply to data
 
 Throws a SeisppError exception for several possible common failures.
 */
 void run_vtk_converter(string dbname, TimeWindow tw, Metadata vtkparams,
-        bool event_mode,long evid)
+        long evid,string filter_used)
 {
     const string base_error("run_vtk_converter procedure:  ");
     const string output_pffile("ParticleMotionVTKConverter.pf");
@@ -139,26 +156,73 @@ void run_vtk_converter(string dbname, TimeWindow tw, Metadata vtkparams,
            in the shell path. */
         const string progname("ParticleMotionVTKConverter");
         int iret;  // used to hold execlp return code 
-        if(event_mode)
-        {
-            stringstream ss;
-            ss << evid;
-            string evstr=ss.str();
-            iret=execlp(progname.c_str(),progname.c_str(),dbname.c_str(),
+        stringstream ss;
+        ss << evid;
+        string evstr=ss.str();
+        const string quote("\"");
+        string filterarg;
+        filterarg=quote+filter_used+quote;
+        iret=execlp(progname.c_str(),progname.c_str(),dbname.c_str(),
                     "-e",evstr.c_str(),
+                    "-filter",filterarg.c_str(),
                     "-engine",NULL);
-        }
-        else
-        {
-            iret=execlp(progname.c_str(),progname.c_str(),dbname.c_str(),
-                    "-a",strtime(tw.start),strtime(tw.end),
-                    "-engine",NULL);
-        }
         if(iret) throw SeisppError(base_error
                 + "execlp failed running ParticleMotionVTKConverter");
     }catch(...){throw;};
 }
 
+/* This routine execs the ParticleMtionVTKConverter program in engine mode
+   assembling all the pieces needed to make it run consistently with the gui.
+   This function is run for absolute time mode.
+Arguments:
+    dbname - Datascope db name passed to ParticleMotionVTKConverter
+    t0 - absolute start time to pass forward
+    endtime - absolute end time to pass (defines read window with padding)
+    tw - relative time window (i.e. want data from t0+tw.start to t0+tw.end
+    vtkparams - parameters returned by gui interface
+    filter_used - BRTT filter definition to apply to data
+
+Throws a SeisppError exception for several possible common failures.
+*/
+void run_vtk_converter(string dbname, double t0, double endtime, TimeWindow tw, 
+        Metadata vtkparams,string filter_used)
+{
+    const string base_error("run_vtk_converter absolute time procedure:  ");
+    const string output_pffile("ParticleMotionVTKConverter.pf");
+    try{
+        /* Window is always relative. */
+        vtkparams.put("process_window_start_time",tw.start);
+        vtkparams.put("process_window_end_time",tw.end);
+        /* Write results to a pf in the local directory.  This approach assumes
+           ParticleMotionVTKConverter uses the antelope pf search path to find
+           default parameters that are not set by the gui. */
+        ofstream opf;
+        opf.open(output_pffile.c_str());
+        if(opf.fail())
+            throw SeisppError(base_error
+                    + "open failed on Pf file="+output_pffile);
+        opf << vtkparams;
+        opf.close();
+        /* We will use execlp which we assume will find ParticleMotionVTKConverter
+           in the shell path. */
+        const string progname("ParticleMotionVTKConverter");
+        int iret;  // used to hold execlp return code 
+        const string quote("\"");
+        string st,et;
+        st=quote+strtime(t0)+quote;
+        et=quote+strtime(endtime)+quote;
+        string filterarg;
+        filterarg=quote+filter_used+quote;
+        cout << "Running "<<progname.c_str()<< " with -a "
+                << st << " "<<et<<" -filter "<<filterarg<<endl;
+        iret=execlp(progname.c_str(),progname.c_str(),dbname.c_str(),
+                    "-a",st.c_str(),et.c_str(),
+                    "-filter",filterarg.c_str(),
+                    "-engine",NULL);
+        if(iret) throw SeisppError(base_error
+                + "execlp failed running ParticleMotionVTKConverter");
+    }catch(...){throw;};
+}
 void usage()
 {
     cerr << "PMVisualizer db (-e evid | -ts t0 ) (-3C sta | -comp XXX) [-pf pffile]" <<endl;
@@ -171,7 +235,7 @@ int main(int argc, char **argv)
     if(argc<6) usage();
     string dbname(argv[1]);
     long evid(-1);
-    double start_time(0.0);
+    double starttime(0.0),endtime(0.0);
     bool event_mode(true);
     bool ensemble_plot_mode(true);
     bool data_mode_set(false);
@@ -211,7 +275,7 @@ int main(int argc, char **argv)
             event_mode=false;
             ++i;
             if(i>=argc) usage();
-            start_time=str2epoch(argv[i]);
+            starttime=str2epoch(argv[i]);
             data_mode_set=true;
         }
         else
@@ -220,8 +284,8 @@ int main(int argc, char **argv)
     if(!data_mode_set)usage();
     if(!plot_mode_set)usage();
     string cr=antelope_contrib_root_pf();
-    string pffile=cr+"PMVisualizer.pf";
-    for(i=5;i<argc;++i)
+    string pffile=cr+"/PMVisualizer.pf";
+    for(i=6;i<argc;++i)
     {
         sarg=string(argv[i]);
         if(sarg=="-pf")
@@ -248,8 +312,13 @@ int main(int argc, char **argv)
         DatascopeHandle dbh(dbname,true);
         string subset_str;
         if(ensemble_plot_mode)
-            subset_str="chan=~/"+comp+"/";
+            /* In this mode we used a time window constructor.  The 
+               interface with Danny Harvey code uses only the component
+               name not a true expression */
+            subset_str=comp;
         else
+            /* In event mode this is passed to the subset method so 
+               it is a datascope expression */
             subset_str="sta=~/"+sta+"/";
 
         /* Different data options are implemented as different procedures
@@ -261,8 +330,8 @@ int main(int argc, char **argv)
             d=load_event_data(dbh,subset_str,evid,ensemblemdl,tracemdl,am);
         else
         {
-            double endtime=start_time+plotmd.get_double("DisplayWindowLength");
-            d=load_time_window(dbh,subset_str,TimeWindow(start_time,endtime),
+            endtime=starttime+plotmd.get_double("DisplayWindowLength");
+            d=load_time_window(dbh,subset_str,TimeWindow(starttime,endtime),
                         ensemble_plot_mode);
         }
         PMVisualizerGUI  win(plotmd);
@@ -280,16 +349,21 @@ int main(int argc, char **argv)
                 cout << "Enter y to use this filter.   "
                     << "Type any other key to try again:";
                 ques=getchar();
-            }while(ques=='y');
+            }while(ques!='y');
             cout << "Select the time window for display in paraview"<<endl;
             TimeWindow tw=win.get();
             Metadata vtkparams=win.get_parameters();
-            run_vtk_converter(dbname,tw,vtkparams,event_mode,evid);
+            string filter_used=win.get_filter();
+            if(event_mode)
+                run_vtk_converter(dbname,tw,vtkparams,evid,filter_used);
+            else
+                run_vtk_converter(dbname,starttime,endtime,tw,
+                        vtkparams,filter_used);
             cout << "Check output in paraview"<<endl;
             cout << "Try again?"<<endl
                 << "If so enter y, type any other key to exit"<<endl;
             ques=getchar();
-        }while(ques=='y');
+        }while(ques!='y');
 
     }catch(SeisppError& serr)
     {
