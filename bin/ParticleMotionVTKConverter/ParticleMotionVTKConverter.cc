@@ -221,9 +221,10 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
 void usage()
 {
     cerr << "ParticleMotionVTKConverter db "
-        <<"[ (-a start_time end_time | -e evid)  -engine"
+        <<" (-a start_time end_time | -e evid) [-filter fstring -engine"
         <<" -pf pffile]"<<endl
-        << "Use -a for fixed time window and -e for one event"<<endl
+        << "Must use either -a for fixed time window or -e for one event"<<endl
+        << "-filter overrides pf definition of default filter"<<endl
         << "-engine disables interactive scale editing"<<endl
         << "Use -pf to alter default control file ParticleMotionVTKConverter.pf"
         <<endl;
@@ -246,6 +247,7 @@ int main(int argc, char **argv)
     bool abstime(false),eventmode(false);
     bool engine_mode(false);
     TimeWindow twtotal;
+    string filtername_from_arglist("none");
     long evid;
     int i;
     for(i=2;i<argc;++i)
@@ -281,6 +283,13 @@ int main(int argc, char **argv)
         }
         else if(sarg=="-engine")
             engine_mode=true;
+        else if(sarg=="-filter")
+        {
+            ++i;
+            if(i>=argc) usage();
+            sarg=string(argv[i]);
+            filtername_from_arglist=sarg;
+        }
         else
             usage();
     }
@@ -322,6 +331,9 @@ int main(int argc, char **argv)
         string filter_definition;
         if(filter_data)
             filter_definition=md.get_string("BRTT_filter_definition");
+        /* override that name if arg list had a filter definition*/
+        if(filtername_from_arglist!="none")
+            filter_definition=filtername_from_arglist;
         /* This builds the object used to convert data to a local
            coordinate system for paraview */
         double olat,olon,odepth,azn;
