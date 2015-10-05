@@ -1,12 +1,16 @@
 filter_data	1
-BRTT_filter_definition	BW 0.1 4 10 4
+BRTT_filter_definition &Tbl{
+DEMEAN
+}
 process_window_start_time	-10.0
-process_window_end_time	100.0
+process_window_end_time	90.0
+animation_window_start_time	-2.0
+animation_window_end_time	10.0
 animate_dt	0.1
 animate_time_window_length	5.0
 animate_file_base	worms
 pvd_file	AnimatePM.pvd
 animate_file_directory	./PMframes
 full_window_file	FullWindowPM.vtp
-pMscale_factor	1.0
+PMscale_factor	1.0
 
