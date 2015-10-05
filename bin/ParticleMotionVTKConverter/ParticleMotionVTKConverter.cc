@@ -133,7 +133,7 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
         int number_time_steps;
         string test;
         do {
-            number_time_steps=trunc( (fulltimewindow.end-twlen)/dt );
+            number_time_steps=trunc( (trange-twlen)/dt );
             cout << "write_animation_files procedure:   "
                 << "Data time range is "
                    <<fulltimewindow.start<<" to "<<fulltimewindow.end<<endl
