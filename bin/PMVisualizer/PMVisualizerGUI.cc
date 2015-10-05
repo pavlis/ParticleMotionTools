@@ -31,8 +31,6 @@ void PMVisualizerGUI::filter_and_plot(TimeSeriesEnsemble& din)
         TimeInvariantFilter f(filtername);
         TimeSeriesEnsemble d(din);
         FilterEnsemble(d,f);
-        cout << "Plotting "<<d.member.size()<<" seismograms filtered with "
-            << filtername<<endl;
         // Do not block - later call too pick time window is needed
         this->plot(d);
         //DEBUG - see if we can set display marker 

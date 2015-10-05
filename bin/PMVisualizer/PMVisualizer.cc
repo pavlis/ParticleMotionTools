@@ -135,7 +135,30 @@ void run_vtk_converter(string dbname, TimeWindow tw, Metadata vtkparams,
 {
     const string base_error("run_vtk_converter procedure:  ");
     const string output_pffile("ParticleMotionVTKConverter.pf");
+    int status(0),options(0);   // used for waitpid
     try{
+        pid_t pid = fork();
+        if(pid<0)
+        {
+            cerr << "Fork failed in run_vtk_converter (routine that runs ParticleMotionVTKconverter)"
+                <<endl;
+            exit(-1);
+        }
+        else if(pid>0)
+        {
+            cout << "Parent waiting for child process with pid="<<pid<<" to exit"<<endl;
+            pid_t pid_from_wait=waitpid(pid,&status,options);
+            // Can probably eventually delete this
+            cout << "pid returned by waitpid="<<pid_from_wait<<endl;
+            if(WIFEXITED(status))
+                cout << "ParticleMotionVTKconverter exited normally"<<endl;
+            else
+            {
+                cout << "Something went wrong exiting ParticleMotionVTKconverter - exiting"<<endl;
+                exit(-1);
+            }
+            return;
+        }
         /* Window may be absolute or relative, but for both modes we 
            set the internal parameter used by ParticleMotionVTKConverter even
            though a present this ony matters for event_mode.   Useful to 
@@ -189,7 +212,30 @@ void run_vtk_converter(string dbname, double t0, double endtime, TimeWindow tw,
 {
     const string base_error("run_vtk_converter absolute time procedure:  ");
     const string output_pffile("ParticleMotionVTKConverter.pf");
+    int status(0),options(0);   // used for waitpid
     try{
+        pid_t pid = fork();
+        if(pid<0)
+        {
+            cerr << "Fork failed in run_vtk_converter (routine that runs ParticleMotionVTKconverter)"
+                <<endl;
+            exit(-1);
+        }
+        else if(pid>0)
+        {
+            cout << "Parent waiting for child process with pid="<<pid<<" to exit"<<endl;
+            pid_t pid_from_wait=waitpid(pid,&status,options);
+            // Can probably eventually delete this
+            cout << "pid returned by waitpid="<<pid_from_wait<<endl;
+            if(WIFEXITED(status))
+                cout << "ParticleMotionVTKconverter exited normally"<<endl;
+            else
+            {
+                cout << "Something went wrong running ParticleMotionVTKconverter - exiting"<<endl;
+                exit(-1);
+            }
+            return;
+        }
         /* Window is always relative. */
         vtkparams.put("process_window_start_time",tw.start);
         vtkparams.put("process_window_end_time",tw.end);
@@ -231,6 +277,7 @@ void usage()
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
+    ios::sync_with_stdio();
     /* First as usual crack the command line. */
     if(argc<6) usage();
     string dbname(argv[1]);
@@ -335,23 +382,47 @@ int main(int argc, char **argv)
                         ensemble_plot_mode);
         }
         PMVisualizerGUI  win(plotmd);
-        char ques;
+        TimeWindow tw;
+        string ques;
         do{
             do{
                 /* This pf is the output of the gui */
                 const string gui_pffile("PMVisualizerGUI.pf");
-                cout << "Fill out any changes in the tk GUI window and push accept"
-                    <<endl;
-                /* probably need a fifo to receive output of accept button */
+                cout << "Fill out any changes in the tk GUI window and push save"
+                    <<endl
+                    << "Type any key here to continue:";
+                cin >> ques;
                 PfStyleMetadata guipf=pfread(gui_pffile);
                 win.load_pfdata(guipf);
+                tw.start=guipf.get_double("animation_window_start_time");
+                tw.end=guipf.get_double("animation_window_end_time");
+                //DEBUG
+                cout << "Using time window "<<tw.start <<" to "
+                    << tw.end<<endl;
+                cout << "Hit the exit button on the GUI to continue"<<endl;
+                /* This is necessary because I cannot make the mb3 
+                   callback work in the seisw widget.  */
+                win.setpick(tw);
                 win.filter_and_plot(d);
-                cout << "Enter y to use this filter.   "
+                cout << "Enter y to use these parameters.  "
                     << "Type any other key to try again:";
-                ques=getchar();
-            }while(ques!='y');
+                cin >> ques;
+            }while(ques!="y");
+            /* This is what to use if I could get the mb3 callbacks to
+               work correctly.  For now replace by keyboard entry.
             cout << "Select the time window for display in paraview"<<endl;
             TimeWindow tw=win.get();
+            */
+            /*
+            TimeWindow tw;
+            cout << "Enter time window for particle motion visualization"
+                <<endl
+                << "Enter start time: ";
+            cin >> tw.start;
+            cout << "Enter time for end of window:  ";
+            cin >> tw.end;
+            win.setpick(tw);
+            */
             Metadata vtkparams=win.get_parameters();
             string filter_used=win.get_filter();
             if(event_mode)
@@ -362,8 +433,8 @@ int main(int argc, char **argv)
             cout << "Check output in paraview"<<endl;
             cout << "Try again?"<<endl
                 << "If so enter y, type any other key to exit"<<endl;
-            ques=getchar();
-        }while(ques!='y');
+            cin >> ques;
+        }while(ques=="y");
 
     }catch(SeisppError& serr)
     {
@@ -376,8 +447,3 @@ int main(int argc, char **argv)
         exit(-1);
     }
 }
-
-
-
-
-
