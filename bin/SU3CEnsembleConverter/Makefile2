@@ -1,0 +1,16 @@
+BIN=SU3CEnsembleConverter
+
+cxxflags=-g -I$(CWPROOT)/include
+ldflags=-L$(ANTELOPE)/contrib/static -L$(CWPROOT)/lib
+ldlibs=-lseispp -lgclgrid -lgenloc $(DBLIBS) $(TRLIBS) -lperf -lsu -lcwp -lpar -lboost_serialization
+SUBDIR=/contrib
+
+include $(ANTELOPEMAKE) 
+include $(ANTELOPEMAKELOCAL)
+CXXFLAGS += -I$(BOOSTINCLUDE)
+LDFLAGS += -L$(BOOSTLIB)
+
+OBJS=SU3CEnsembleConverter.o ReadSegyTrace.o
+$(BIN) : $(OBJS)
+	$(RM) $@
+	$(CXX) $(CCFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
