@@ -1,4 +1,4 @@
-BIN=PMVisualizer PMVisualizerControl
+BIN=PMVisualizer 
 PF=PMVisualizer.pf
 
 cxxflags=-g
