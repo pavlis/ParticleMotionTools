@@ -9,7 +9,8 @@ proc save_pffile {} {
     puts $fd [pmconverter_control_pf]
     close $fd
 }
-
+# This procledure was modified from one created by Dan Quinlan
+# to build a gui from a pf file.   Minor hacks from original
 proc pmconverter_control_options {} {
     set w .pmconverter_control
 
