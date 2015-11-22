@@ -102,6 +102,15 @@ int main(int argc, char **argv)
         AttributeCrossReference xref=parse_xref_tbl(pf);
         /* Now build all the list of metadata to be loaded */
         MetadataList tmdl=pfget_mdlist(pf,"trace_metadata_list");
+        Metadata control(pf);
+        bool apply_rotation=control.get_bool("apply_rotation");
+        double rotation_angle(0.0);
+        if(apply_rotation)
+        {
+            rotation_angle=control.get_double("rotation_angle");
+            /* All angles in my library are radians but input is degrees*/
+            rotation_angle=rad(rotation_angle);
+        }
         HeaderMap hm(pf,string("SEGYfloat"));
         /* This will hold our results */
         ThreeComponentEnsemble ens;
@@ -135,6 +144,8 @@ int main(int argc, char **argv)
             if(k==2)
             {
                 ThreeComponentSeismogram d3c(channels,0);
+                if(apply_rotation)
+                    d3c.rotate(rotation_angle);
                 ens.member.push_back(d3c);
                 k=0;
             }
