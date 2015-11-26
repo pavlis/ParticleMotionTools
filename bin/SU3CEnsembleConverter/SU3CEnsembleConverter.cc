@@ -140,12 +140,32 @@ int main(int argc, char **argv)
         n=0;  k=0;
         while(readok)
         {
+            double dcoord;
+            int icoord;
             channels[k]=dread;
             if(k==2)
             {
                 ThreeComponentSeismogram d3c(channels,0);
                 if(apply_rotation)
                     d3c.rotate(rotation_angle);
+                /* This is necessary because of the obnoxious
+                   coordinate scaling in segy an storage of
+                   coordinates as int.  Here we translate them
+                   to floats and post the result to a new name */
+                int scalco=d3c.get_int("scalco");
+                double scale=(double)scalco;
+                icoord=d3c.get_int("rx");
+                dcoord=((double)icoord)/scale;
+                d3c.put("rx_flaot",dcoord);
+                icoord=d3c.get_int("ry");
+                dcoord=((double)icoord)/scale;
+                d3c.put("ry_flaot",dcoord);
+                icoord=d3c.get_int("sx");
+                dcoord=((double)icoord)/scale;
+                d3c.put("sx_flaot",dcoord);
+                icoord=d3c.get_int("sy");
+                dcoord=((double)icoord)/scale;
+                d3c.put("sy_flaot",dcoord);
                 ens.member.push_back(d3c);
                 k=0;
             }
