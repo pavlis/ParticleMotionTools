@@ -90,7 +90,7 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
         cerr<<"Fatal Error: aborting"<<endl;
         exit(-1);
     }
-    /* Now lead the sample data - requires a float to double
+    /* Now load the sample data - requires a float to double
        conversion */
     int i;
     for(i=0;i<tr.ns;++i) d.s.push_back((double)tr.data[i]);

@@ -44,10 +44,12 @@ AttributeCrossReference parse_xref_tbl(Pf *pf)
 }
 void usage()
 {
-    cerr << "SU3CEnsembleConverter SUinfile outfile [-pf pffile]"<<endl
+    cerr << "SU3CEnsembleConverter outfile [-pf pffile] < SUfile "<<endl
         << "Translates one ensemble of 3C data (sensor order 1,2,3=sensor 1)"
         <<endl
         << " in SU format to SEISPP ThreeComponentEnsemble object serialization"
+        <<endl
+        << " SU data comes through stdin - normally pipeline with an suwind filer"
         <<endl;
     exit(-1);
 }
@@ -63,14 +65,13 @@ char **xargv;
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
-    if(argc<3)usage();
+    if(argc<2)usage();
     xargc=argc;
     xargv=argv;
-    string SUinfile(argv[1]);
-    string outfile(argv[2]);
+    string outfile(argv[1]);
     string pffile("SU3CEnsembleConverter");
     int i,j;
-    for(i=3;i<argc;++i)
+    for(i=2;i<argc;++i)
     {
         string sarg(argv[i]);
         if(sarg=="-pf")
