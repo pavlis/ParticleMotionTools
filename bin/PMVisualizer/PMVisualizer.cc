@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <boost/archive/text_iarchive.hpp>
 #include "stock.h"
 #include "seispp.h"
 #include "Metadata.h"
@@ -23,6 +24,29 @@ string antelope_contrib_root_pf()
     }
     return result;
 }
+/*This is a read routine from boost text archive file infile.   In
+this mode we always read the entire file.  */
+ThreeComponentEnsemble load_data_from_file(string infile)
+{
+    const string base_error("PMVisualizer load_data_from_file procedure: ");
+    std::ifstream ifp(infile.c_str(),ios::in);
+    if(ifp.fail()) throw SeisppError(base_error
+            + "cannot open file="+infile);
+    ThreeComponentEnsemble d3c;
+    boost::archive::text_iarchive ia(ifp);
+    try {
+        ia >> d3c;
+    }catch(...){
+        ifp.close();
+        throw SeisppError(base_error+"read error on boost text archive file "
+                + infile);
+    }
+    ifp.close();
+    return d3c;
+}
+
+
+
 /* This is the read routine for event data */
 TimeSeriesEnsemble load_event_data(DatascopeHandle& dbh, string sstr,
         long evid, MetadataList& emdl, MetadataList& tmdl, AttributeMap& am)
@@ -271,7 +295,9 @@ void run_vtk_converter(string dbname, double t0, double endtime, TimeWindow tw,
 }
 void usage()
 {
-    cerr << "PMVisualizer db (-e evid | -ts t0 ) (-3C sta | -comp XXX) [-pf pffile]" <<endl;
+    cerr << "PMVisualizer db (-e evid | -ts t0 ) (-3C sta | -comp XXX) "
+        <<"[-i infile -pf pffile]" <<endl;
+    cerr << "Use -i to read from boost serialization file infile (default is load from db)"<<endl;
     exit(-1);
 }
 bool SEISPP::SEISPP_verbose(true);
@@ -281,6 +307,8 @@ int main(int argc, char **argv)
     /* First as usual crack the command line. */
     if(argc<6) usage();
     string dbname(argv[1]);
+    string infile;
+    bool file_input(false);
     long evid(-1);
     double starttime(0.0),endtime(0.0);
     bool event_mode(true);
@@ -324,6 +352,14 @@ int main(int argc, char **argv)
             if(i>=argc) usage();
             starttime=str2epoch(argv[i]);
             data_mode_set=true;
+        }
+        else if(sarg=="-ts")
+        {
+            event_mode=false;
+            ++i;
+            if(i>=argc) usage();
+            infile=argv[i];
+            file_input=true;
         }
         else
             usage();
@@ -373,7 +409,24 @@ int main(int argc, char **argv)
            to simplify logic of main.   Use a copy instead of a pointer
            as the size of d should not be huge */
         TimeSeriesEnsemble d;
-        if(event_mode)
+        if(file_input)
+        {
+            ThreeComponentEnsemble d3c;
+            d3c=load_data_from_file(infile);
+            /* For now we only allow plotting one component in this input mode.
+             Require in this case that comp is an integer.  */
+            int ic=atoi(comp.c_str());
+            if(ic<0 || ic>2)
+            {
+                cerr << "Illegal component number extracted from this string->"
+                    <<comp<<endl
+                    <<"In file input mode this argument must be 0, 1 or 2"<<endl;
+            }
+            auto_ptr<TimeSeriesEnsemble> dtmp=ExtractComponent(d3c,ic);
+            /* Interface collision with a nasty inefficiency */
+            d=(*dtmp);
+        }
+        else if(event_mode)
             d=load_event_data(dbh,subset_str,evid,ensemblemdl,tracemdl,am);
         else
         {

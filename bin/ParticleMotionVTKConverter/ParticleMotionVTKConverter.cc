@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <boost/archive/text_iarchive.hpp>
 #include "stock.h"
 #include "seispp.h"
 #include "ParticleMotionData.h"
@@ -221,9 +222,12 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
 void usage()
 {
     cerr << "ParticleMotionVTKConverter db "
-        <<" (-a start_time end_time | -e evid) [-filter fstring -engine"
+        <<" (-a start_time end_time | -e evid) (-i infile) [-filter fstring -engine"
         <<" -pf pffile]"<<endl
         << "Must use either -a for fixed time window or -e for one event"<<endl
+        << "Use -i to read from file infile created by boost serialization"<<endl
+        << "Warning:  if -e is used with -i require arrival.time attribute for each 3C ensemble member"<<endl
+        << " (default is to load data from dbname set as arg1 - arg1 is ignored if -i is used)" <<endl
         << "-filter overrides pf definition of default filter"<<endl
         << "-engine disables interactive scale editing"<<endl
         << "Use -pf to alter default control file ParticleMotionVTKConverter.pf"
@@ -244,8 +248,10 @@ int main(int argc, char **argv)
         usage();
     }
     string dbname(argv[1]);
+    string infile;
     bool abstime(false),eventmode(false);
     bool engine_mode(false);
+    bool read_from_db(true);
     TimeWindow twtotal;
     string filtername_from_arglist("none");
     long evid;
@@ -290,10 +296,22 @@ int main(int argc, char **argv)
             sarg=string(argv[i]);
             filtername_from_arglist=sarg;
         }
+        else if(sarg=="-i")
+        {
+            ++i;
+            if(i>=argc) usage();
+            infile=string(argv[i]);
+            read_from_db=false;
+        }
         else
             usage();
     }
     if(!(eventmode || abstime) ) usage();
+    if((!read_from_db) && abstime)
+    {
+        cerr << "Illegal argument combination:   time interval not supported for file input"<<endl;
+        usage();
+    }
     try {
         Metadata md(pf);
         bool sap_mode=md.get_bool("small_aperture_array_mode");
@@ -353,14 +371,33 @@ int main(int argc, char **argv)
         double stime,etime;  /* Total time period to read */
         DatascopeHandle dbh(dbname,true);
         /* The prep routines form the working view with datascope.*/
-        if(eventmode)
+        if(read_from_db)
         {
-            draw=get_event_data(dbh,evid,ensemblemdl,tracemdl,am);
+            if(eventmode)
+            {
+                draw=get_event_data(dbh,evid,ensemblemdl,tracemdl,am);
+            }
+            else 
+            {
+                StationChannelMap scm(pf);
+                draw=new ThreeComponentEnsemble(dbh,twtotal,scm);
+            }
         }
-        else 
+        else
         {
-            StationChannelMap scm(pf);
-            draw=new ThreeComponentEnsemble(dbh,twtotal,scm);
+            std::ifstream ifp(infile.c_str(),ios::in);
+            if(ifp.fail()) 
+            {
+                cerr << "FATAL:  Open failed for input file="<<infile<<endl;
+                usage();
+            }
+            boost::archive::text_iarchive ia(ifp);
+            ThreeComponentEnsemble drtmp;
+            ia >> drtmp;
+            ifp.close();
+            /* This is very inefficient but didn't want to recode the db 
+               versions.*/
+            draw=new ThreeComponentEnsemble(drtmp);
         }
         /* Optional filter */
         vector<ThreeComponentSeismogram>::iterator dptr;
