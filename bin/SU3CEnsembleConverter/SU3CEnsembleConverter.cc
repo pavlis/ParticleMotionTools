@@ -5,11 +5,9 @@
 #include "seispp.h"
 #include "HeaderMap.h"
 #include "AttributeCrossReference.h"
-/* This could be in an include, but will insert this prototype here.
-   In a separate file as this routine may eventually become a library
-   routine */
-TimeSeries ReadSegyTrace(FILE *, HeaderMap& hm, AttributeCrossReference& xref,
-        MetadataList& mdl);
+/* This could be in an include, but will insert this prototype here
+   rather than make an include file with one line.*/
+TimeSeries ReadSegyTrace(FILE *);
 
 /* This procedure parses a Tbl with the tag "SUAttributeCrossReference" 
    and constructs the cross reference map needed by the GenericFileHandle. 
@@ -123,7 +121,7 @@ int main(int argc, char **argv)
            interface to SU was designed to return a TimeSeries object.
            */
         bool readok;
-        TimeSeries dread=ReadSegyTrace(stdin,hm,xref,tmdl);
+        TimeSeries dread=ReadSegyTrace(stdin);
         if(dread.ns<=0) 
         {
             cerr << "No data to process.   ReadSegyTrace hit EOF immediately"
@@ -168,32 +166,14 @@ int main(int argc, char **argv)
                 ThreeComponentSeismogram d3c(channels,0);
                 if(apply_rotation)
                     d3c.rotate(rotation_angle);
-                /* This is necessary because of the obnoxious
-                   coordinate scaling in segy an storage of
-                   coordinates as int.  Here we translate them
-                   to floats and post the result to a new name */
-                int scalco=d3c.get_int("scalco");
-                double scale=(double)scalco;
-                icoord=d3c.get_int("rx");
-                dcoord=((double)icoord)/scale;
-                d3c.put("rx_float",dcoord);
-                icoord=d3c.get_int("ry");
-                dcoord=((double)icoord)/scale;
-                d3c.put("ry_float",dcoord);
-                icoord=d3c.get_int("sx");
-                dcoord=((double)icoord)/scale;
-                d3c.put("sx_float",dcoord);
-                icoord=d3c.get_int("sy");
-                dcoord=((double)icoord)/scale;
-                d3c.put("sy_float",dcoord);
-                //DEBUG
-                cout << dynamic_cast<Metadata&>(d3c)<<endl;
                 ens.member.push_back(d3c);
-                k=0;
             }
-            dread=ReadSegyTrace(stdin,hm,xref,tmdl);
+            dread=ReadSegyTrace(stdin);
             if(dread.ns<=0) readok=false;
-            ++k;
+            cout << "n="<<n<<" k="<<k<<endl;
+            ++n;
+            k=n%3;
+            //DEBUG
         }
         cout << "Finished bundling 3C ensemble with "<<ens.member.size()
             << " 3C objects"<<endl

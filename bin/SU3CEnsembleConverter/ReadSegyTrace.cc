@@ -20,10 +20,8 @@ typedef union { /* storage for arbitrary type */
 typedef char *cwp_String;
 #include "segy.h"
 #include "TimeSeries.h"
-#include "HeaderMap.h"
-#include "AttributeCrossReference.h"
-TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm, 
-        AttributeCrossReference& xref, MetadataList& mdl)
+using namespace SEISPP;
+TimeSeries ReadSegyTrace(FILE *fp)
 {
     const string base_error("ReadSegyTrace:  ");
     segy tr;
@@ -36,66 +34,69 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
       read failed. */
     iret=fgettr(fp,&tr);
     if(iret==0) return TimeSeries();
-    TimeSeries d(tr.ns);
-    /* fgettr converts xdr data to the segy interal struct.  Now 
-       we use the HeaderMap to pull these out.   Note a less general
-       solution worth considering is to pull out a frozen set of 
-       names and convert them here to mesh with other particle motion
-       code.   Will do it the more general way as this routine could
-       have other uses. The code here is adapted from GenericFileHandle
-     method LoadMetadata and the get template*/
-    try {
-        string extkey;
-        MDtype keydatatype;
-        MetadataList::iterator mdlptr;
-        for(mdlptr=mdl.begin();mdlptr!=mdl.end();++mdlptr)
-        {
-            extkey=xref.external(mdlptr->tag);
-            keydatatype=mdlptr->mdt;
-            AttributeType rdtype=hm.dtype(extkey);
-            short sival;
-            int ival;
-            double dval;
-            string sval;
-            bool bval;
-            switch(keydatatype)
-            {
-                /* A header by definition starts at byte 0 so
-                   we use the fact that the tr struct returned by
-                   fgettr is a binary blob with a header. Passed
-                   to HeaderMap method here as an opaque pointer*/
-                case MDint:
-                    if(rdtype==INT16)
-                        sival=hm.get<short>(extkey,reinterpret_cast<unsigned char*>(&tr));
-                    else
-                        ival=hm.get<int>(extkey,reinterpret_cast<unsigned char*>(&tr));
-                    d.put(mdlptr->tag,ival);
-                    break;
-                case MDreal:
-                    dval=hm.get<double>(extkey,reinterpret_cast<unsigned char*>(&tr));
-                    d.put(mdlptr->tag,dval);
-                    break;
-                case MDboolean:
-                    bval=hm.get_bool(extkey,reinterpret_cast<unsigned char*>(&tr));
-                    d.put(mdlptr->tag,bval);
-                    break;
-                case MDstring:
-                    sval=hm.get_string(extkey,reinterpret_cast<unsigned char*>(&tr));
-                    d.put(mdlptr->tag,sval);
-                    break;
-                case MDinvalid:
-                default:
-                    //Silently do nothing if invalid or something else
-                    continue;
-            }
-        }
-        /* We hard code these required attributes */
+    TimeSeries d;
+    d.s.reserve(tr.ns);
+    /* We extract only a fixed set of header values.   This is not
+       general, but the first attempt at this using a HeaderMap 
+       object was more hassle than it was worth.  Instead this
+       just hard codes what is extracted.   Hack this if 
+       the code needs to be adapted to another project.  
+       
+       First the required elements for a TimeSeries object. */
+    try{
         d.ns=tr.ns;
         d.dt = ((double)tr.dt)*1.0e-6;
         if(tr.trid==2)
             d.live=false;
         else
             d.live=true;
+        d.ns=tr.ns;
+        d.dt = ((double)tr.dt)*1.0e-6;
+        if(tr.trid==2)
+            d.live=false;
+        else
+            d.live=true;
+        /* Now we copy a few things to the Metadata header */
+        d.put("tracl",tr.tracl);
+        d.put("tracr",tr.tracr);
+        d.put("fldr",tr.fldr);
+        d.put("tracf",tr.tracf);
+        // alias for downstream
+        char sbuf[10];
+        sprintf(sbuf,"%d",tr.tracf);
+        d.put("chan",sbuf);
+        d.put("ep",tr.ep);
+        // another useful alias
+        d.put("evid",tr.ep);
+        d.put("nvs",tr.nvs);
+        /* These are coordinates.  Here we store the 
+           raw values as ints and a real value 
+           that will be actually used downstream */
+        double dcoord;
+        double scale=(double)(tr.scalco);
+        dcoord=(double)(tr.gx);
+        dcoord/=scale;
+        d.put("rx",dcoord); // note conversion of gx,gy to rx,ry
+        dcoord=(double)(tr.gy);
+        dcoord/=scale;
+        d.put("ry",dcoord);
+        dcoord=(double)(tr.sx);
+        dcoord/=scale;
+        d.put("sx",dcoord);
+        dcoord=(double)(tr.sy);
+        dcoord/=scale;
+        d.put("sy",dcoord);
+        d.put("relev",tr.gelev);
+        d.put("selev",tr.selev);
+        /* This is a peculiar Homestake data oddity.  offset
+           is in m and does not include the scalco factor.  This 
+           may be segy standard, but beware as I'm not sure. */
+        d.put("offset",(double)tr.offset);
+        /* Double these in metadata */
+        d.put("nsamp",(int)tr.ns);
+        d.put("int_dt",(int)tr.dt);
+        d.put("dt",d.dt);
+        d.put("samprate",1.0/(d.dt));
     }catch(SeisppError& serr)
     {
         cerr << base_error <<"Error parsing header data."<<endl
@@ -107,7 +108,8 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
     /* Now load the sample data - requires a float to double
        conversion */
     int i;
-    for(i=0;i<tr.ns;++i) d.s.push_back((double)tr.data[i]);
+    for(i=0;i<tr.ns;++i) 
+        d.s.push_back((double)tr.data[i]);
     return d;
 }
 
