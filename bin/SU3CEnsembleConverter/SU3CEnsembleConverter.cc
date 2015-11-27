@@ -115,6 +115,7 @@ int main(int argc, char **argv)
         HeaderMap hm(pf,string("SEGYfloat"));
         /* This will hold our results */
         ThreeComponentEnsemble ens;
+        cout << "SU3CEnsembleConverter processing begins - reading from stdin"<<endl;
         /* Now load the data file until EOF.  This is not general
            but assumes this program will always follow a suwind 
            command to build the ensemble.  The logic of this
@@ -143,6 +144,24 @@ int main(int argc, char **argv)
         {
             double dcoord;
             int icoord;
+            /* We need a more elegant version of this eventually but for 
+               now will hard code these */
+            switch(k)
+            {
+                case 0:
+                    dread.put("hang",0.0);
+                    dread.put("vang",90.0);
+                    break;
+                case 1:
+                    dread.put("hang",0.0);
+                    dread.put("vang",0.0);
+                    break;
+                case 2:
+                default:
+                    dread.put("hang",90.0);
+                    dread.put("vang",0.0);
+                    break;
+            };
             channels[k]=dread;
             if(k==2)
             {
@@ -157,22 +176,28 @@ int main(int argc, char **argv)
                 double scale=(double)scalco;
                 icoord=d3c.get_int("rx");
                 dcoord=((double)icoord)/scale;
-                d3c.put("rx_flaot",dcoord);
+                d3c.put("rx_float",dcoord);
                 icoord=d3c.get_int("ry");
                 dcoord=((double)icoord)/scale;
-                d3c.put("ry_flaot",dcoord);
+                d3c.put("ry_float",dcoord);
                 icoord=d3c.get_int("sx");
                 dcoord=((double)icoord)/scale;
-                d3c.put("sx_flaot",dcoord);
+                d3c.put("sx_float",dcoord);
                 icoord=d3c.get_int("sy");
                 dcoord=((double)icoord)/scale;
-                d3c.put("sy_flaot",dcoord);
+                d3c.put("sy_float",dcoord);
+                //DEBUG
+                cout << dynamic_cast<Metadata&>(d3c)<<endl;
                 ens.member.push_back(d3c);
                 k=0;
             }
             dread=ReadSegyTrace(stdin,hm,xref,tmdl);
             if(dread.ns<=0) readok=false;
+            ++k;
         }
+        cout << "Finished bundling 3C ensemble with "<<ens.member.size()
+            << " 3C objects"<<endl
+        << "Writing to archive file "<<outfile<<endl;
         /* Now we save the result to outfile */
         oa << ens;
     }catch(SeisppError& serr)

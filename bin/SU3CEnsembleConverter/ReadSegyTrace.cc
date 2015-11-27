@@ -1,5 +1,5 @@
 #include <stdio.h>
-//#include "su.h"
+/*#include "su.h"*/
 #include "par.h"
 /* This is from su.h.  su.h generated a lot of errors so I pulled this
    in selectively*/
@@ -16,6 +16,8 @@ typedef union { /* storage for arbitrary type */
 	unsigned int U:16;
 	unsigned int P:32;
 } Value;
+/* From newer version of su.h */
+typedef char *cwp_String;
 #include "segy.h"
 #include "TimeSeries.h"
 #include "HeaderMap.h"
@@ -41,7 +43,7 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
        names and convert them here to mesh with other particle motion
        code.   Will do it the more general way as this routine could
        have other uses. The code here is adapted from GenericFileHandle
-     method LoadMetadata*/
+     method LoadMetadata and the get template*/
     try {
         string extkey;
         MDtype keydatatype;
@@ -50,6 +52,8 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
         {
             extkey=xref.external(mdlptr->tag);
             keydatatype=mdlptr->mdt;
+            AttributeType rdtype=hm.dtype(extkey);
+            short sival;
             int ival;
             double dval;
             string sval;
@@ -61,7 +65,10 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
                    fgettr is a binary blob with a header. Passed
                    to HeaderMap method here as an opaque pointer*/
                 case MDint:
-                    ival=hm.get<int>(extkey,reinterpret_cast<unsigned char*>(&tr));
+                    if(rdtype==INT16)
+                        sival=hm.get<short>(extkey,reinterpret_cast<unsigned char*>(&tr));
+                    else
+                        ival=hm.get<int>(extkey,reinterpret_cast<unsigned char*>(&tr));
                     d.put(mdlptr->tag,ival);
                     break;
                 case MDreal:
@@ -82,6 +89,13 @@ TimeSeries ReadSegyTrace(FILE *fp, HeaderMap& hm,
                     continue;
             }
         }
+        /* We hard code these required attributes */
+        d.ns=tr.ns;
+        d.dt = ((double)tr.dt)*1.0e-6;
+        if(tr.trid==2)
+            d.live=false;
+        else
+            d.live=true;
     }catch(SeisppError& serr)
     {
         cerr << base_error <<"Error parsing header data."<<endl
