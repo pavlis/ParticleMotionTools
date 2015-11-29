@@ -71,31 +71,39 @@ TimeSeries ReadSegyTrace(FILE *fp)
         // another useful alias
         d.put("evid",tr.ep);
         d.put("nvs",tr.nvs);
-        /* These are coordinates.  Here we store the 
-           raw values as ints and a real value 
-           that will be actually used downstream */
-        double dcoord;
+        /* These are coordinates.  We convert them to 
+           real numbers here from su where they are stored
+           as int.  su borrows scalco from segy to add precision
+           which we retain here. */
+        double rx,ry,sx,sy;
         double scale=(double)(tr.scalco);
-        dcoord=(double)(tr.gx);
-        dcoord/=scale;
-        d.put("rx",dcoord); // note conversion of gx,gy to rx,ry
-        dcoord=(double)(tr.gy);
-        dcoord/=scale;
-        d.put("ry",dcoord);
-        dcoord=(double)(tr.sx);
-        dcoord/=scale;
-        d.put("sx",dcoord);
-        dcoord=(double)(tr.sy);
-        dcoord/=scale;
-        d.put("sy",dcoord);
+        rx=(double)(tr.gx);
+        rx/=scale;
+        d.put("rx",rx); // note conversion of gx,gy to rx,ry
+        ry=(double)(tr.gy);
+        ry/=scale;
+        d.put("ry",ry);
+        sx=(double)(tr.sx);
+        sx/=scale;
+        d.put("sx",sx);
+        sy=(double)(tr.sy);
+        sy/=scale;
+        d.put("sy",sy);
         d.put("relev",tr.gelev);
-        /* An oddity to mesh with ParticleMotionVTKconverter requirement*/
+        /* To mesh with ParticleMotionVTKconverter we have to store the
+           sensor elevation in units of km under the site.elev tag.*/
+        double elev=(double)tr.gelev;
+        elev /= 1000.0;
         d.put("site.elev",(double)tr.gelev);
         d.put("selev",tr.selev);
-        /* This is a peculiar Homestake data oddity.  offset
-           is in m and does not include the scalco factor.  This 
-           may be segy standard, but beware as I'm not sure. */
-        d.put("offset",(double)tr.offset);
+        /* We save offset in the the original segy int form and compute
+           it form the other coordinates.   The later can be more 
+           accurate when scalco is greater than one.*/
+        double offset;
+        elev=(double)(tr.gelev-tr.selev);
+        offset=sqrt((rx-sx)*(rx-sx) + (ry-sy)*(ry-sy) + elev*elev);
+        d.put("offset_from_segy",(double)tr.offset);
+        d.put("offset",offset);
         /* Double these in metadata */
         d.put("nsamp",(int)tr.ns);
         d.put("int_dt",(int)tr.dt);
