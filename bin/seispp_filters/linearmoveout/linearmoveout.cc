@@ -103,13 +103,6 @@ int main(int argc, char **argv)
                work.u.zero();
                work.t0+=t0;
                int lag=work.sample_number(-offset/vreduce);
-               //DEBUG
-               cerr << "lag="<<lag
-                   << " nsout="<< nsout 
-                   << " offset="<< offset 
-                   << " ioffset="<< ioffset 
-                   << " ncopy="<< ncopy 
-                   <<endl;
                double *ptr;
                if(lag>=0)
                {
