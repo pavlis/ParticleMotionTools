@@ -111,9 +111,18 @@ int main(int argc, char **argv)
                    << " ncopy="<< ncopy 
                    <<endl;
                double *ptr;
-               ptr=work.u.get_address(0,lag);
-               dcopy(3*ncopy,d.member[i].u.get_address(0,0),1,ptr,1);
-               work.ns=nsout;
+               if(lag>=0)
+               {
+                   ptr=work.u.get_address(0,lag);
+                   dcopy(3*ncopy,d.member[i].u.get_address(0,0),1,ptr,1);
+                   work.ns=nsout;
+               }
+               else
+               {
+                   ptr=d.member[i].u.get_address(0,ioffset);
+                   dcopy(3*ncopy,ptr,1,work.u.get_address(0,0),1);
+                   work.ns=nsout;
+               }
                d.member[i]=work;
             }
         }
