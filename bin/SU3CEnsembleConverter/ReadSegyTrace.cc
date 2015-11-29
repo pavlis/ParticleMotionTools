@@ -56,6 +56,8 @@ TimeSeries ReadSegyTrace(FILE *fp)
             d.live=false;
         else
             d.live=true;
+        d.t0=0.0;   // always zero for shot data which is assumed here
+        d.tref=relative;
         /* Now we copy a few things to the Metadata header */
         d.put("tracl",tr.tracl);
         d.put("tracr",tr.tracr);
@@ -87,6 +89,8 @@ TimeSeries ReadSegyTrace(FILE *fp)
         dcoord/=scale;
         d.put("sy",dcoord);
         d.put("relev",tr.gelev);
+        /* An oddity to mesh with ParticleMotionVTKconverter requirement*/
+        d.put("site.elev",(double)tr.gelev);
         d.put("selev",tr.selev);
         /* This is a peculiar Homestake data oddity.  offset
            is in m and does not include the scalco factor.  This 
@@ -97,6 +101,7 @@ TimeSeries ReadSegyTrace(FILE *fp)
         d.put("int_dt",(int)tr.dt);
         d.put("dt",d.dt);
         d.put("samprate",1.0/(d.dt));
+        d.put("time",d.t0);
     }catch(SeisppError& serr)
     {
         cerr << base_error <<"Error parsing header data."<<endl

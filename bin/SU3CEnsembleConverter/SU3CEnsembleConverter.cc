@@ -2,44 +2,13 @@
 #include <fstream>
 #include <boost/archive/text_oarchive.hpp>
 #include "stock.h"
+#include "perf.h"
 #include "seispp.h"
-#include "HeaderMap.h"
-#include "AttributeCrossReference.h"
+#include "LatLong-UTMconversion.h"
 /* This could be in an include, but will insert this prototype here
    rather than make an include file with one line.*/
 TimeSeries ReadSegyTrace(FILE *);
 
-/* This procedure parses a Tbl with the tag "SUAttributeCrossReference" 
-   and constructs the cross reference map needed by the GenericFileHandle. 
-   Useful here to allow names that are more rational for passing to 
-   output object.   
-
-   Input is converted to a large string and passed to the constructor.
-   Returns the constructed object.   Can throw an exception so 
-   there is a catch all handler. 
-   */
-AttributeCrossReference parse_xref_tbl(Pf *pf)
-{
-    try{
-        Tbl *t=pfget_tbl(pf,const_cast<char *>("SUAttributeCrossReference"));
-        if(t==NULL)
-            throw SeisppError(string("parse_xref_tbl:   pf is missing required")
-                    +" Tbl with tab SUAttributeCrossReference");
-        string xrefbuf;
-        char *s;
-        int i;
-        for(i=0;i<maxtbl(t);++i)
-        {
-            s=(char *)gettbl(t,i);
-            if(i==0)
-                xrefbuf=string(s);
-            else
-                xrefbuf+=string(s);
-            xrefbuf+="\n";
-        }
-        return AttributeCrossReference(xrefbuf);
-    }catch(...){throw;};
-}
 void usage()
 {
     cerr << "SU3CEnsembleConverter outfile [-pf pffile] < SUfile "<<endl
@@ -96,21 +65,70 @@ int main(int argc, char **argv)
             exit(-1);
         }
         boost::archive::text_oarchive oa(ofp);
-        /* This beast provides a cross reference between su names
-           and SEISPP name conventions needed downstream */
-        AttributeCrossReference xref=parse_xref_tbl(pf);
         /* Now build all the list of metadata to be loaded */
         MetadataList tmdl=pfget_mdlist(pf,"trace_metadata_list");
         Metadata control(pf);
+        bool apply_spreading_correction=control.get_bool("correct_for_geometric_spreading");
+        double spow(0.0);  
+        if(apply_spreading_correction)
+        {
+            spow=control.get_double("spreading_power_factor");
+            cout << "Applying geometric spreading correction using "
+                << "offset^"<<spow<<endl;
+        }
         bool apply_rotation=control.get_bool("apply_rotation");
         double rotation_angle(0.0);
         if(apply_rotation)
         {
             rotation_angle=control.get_double("rotation_angle");
             /* All angles in my library are radians but input is degrees*/
+            cout << "Horizontal components will be rotated by phi="<<rotation_angle<<endl;
             rotation_angle=rad(rotation_angle);
         }
-        HeaderMap hm(pf,string("SEGYfloat"));
+        bool convert_utm=control.get_bool("convert_utm_to_dd");
+        string zone;  //utm zone when needed
+        int RefEl(23);   //frozen as WGS-84
+        if(convert_utm)
+        {
+            zone=control.get_string("UTM_zone");
+            cout << "UTM conversion will be done with zone="<<zone<<endl;
+        }
+        else
+            cout << "Warning:  utm conversion is off."<<endl
+                << "Using the result in ParticleMotionVTKconverter will fail"<<endl;
+        /* This is a crude way to define the hang,vang orientation data. Works
+        only for homestake data where all sensors had a common orientation */
+        Tbl *t;
+        t=pfget_tbl(pf,const_cast<char *>("channel_orientation"));
+        if(t==NULL)
+        {
+            cerr << "Missing required Tbl parameter channel_orientation"<<endl;
+            usage();
+        }
+        if(maxtbl(t)!=3)
+        {
+            cerr << "channel_orientation Tbl parameter in pf file is incorrectly defined"
+                <<endl << "Size must be 3.   Size found="<<maxtbl(t)<<endl;
+            exit(-1);
+        }
+        double hang[3],vang[3];   // parallel arrays
+        long int ii;
+        for(ii=0;ii<3;++ii) 
+        {
+            char *line;
+            line=(char *)gettbl(t,ii);
+            sscanf(line,"%d%lf%lf",&i,hang+ii,vang+ii);
+            if(i!=ii)
+            {
+                cerr << "Format error for channel_orientation data"<<endl
+                    << "Must be listed in ascending channel order (0,1,2)"<<endl
+                    << "Read index "<<i<<" when expecting "<<ii<<endl;
+                exit(-1);
+            }
+            cout << "Component "<<ii<<" Setting hang="<<hang[ii]<< " and vang="
+                <<vang[ii]<<endl;
+        }
+
         /* This will hold our results */
         ThreeComponentEnsemble ens;
         cout << "SU3CEnsembleConverter processing begins - reading from stdin"<<endl;
@@ -142,38 +160,45 @@ int main(int argc, char **argv)
         {
             double dcoord;
             int icoord;
-            /* We need a more elegant version of this eventually but for 
-               now will hard code these */
-            switch(k)
-            {
-                case 0:
-                    dread.put("hang",0.0);
-                    dread.put("vang",90.0);
-                    break;
-                case 1:
-                    dread.put("hang",0.0);
-                    dread.put("vang",0.0);
-                    break;
-                case 2:
-                default:
-                    dread.put("hang",90.0);
-                    dread.put("vang",0.0);
-                    break;
-            };
+            dread.put("hang",hang[k]);
+            dread.put("vang",vang[k]);
             channels[k]=dread;
             if(k==2)
             {
                 ThreeComponentSeismogram d3c(channels,0);
                 if(apply_rotation)
                     d3c.rotate(rotation_angle);
+                if(convert_utm)
+                {
+                    double easting,northing;
+                    easting=d3c.get_double("rx");
+                    northing=d3c.get_double("ry");
+                    double lat,lon;
+                    /* This library routine returns lat,lon in degrees.
+                       We post that to header as css names to mate
+                       with ParticleMotionVTKconverter.  */
+                    UTMtoLL(RefEl,northing,easting,zone.c_str(),lat,lon);
+                    d3c.put("site.lat",lat);
+                    d3c.put("site.lon",lon);
+                }
+                if(apply_spreading_correction)
+                {
+                    double offset=d3c.get_double("offset");
+                    offset=fabs(offset);
+                    /* Test for small offset - unit dependent assumes
+                       offset in m */
+                    if(offset>0.01)
+                    {
+                        double scale=pow(offset,spow);
+                        dscal(3*d3c.ns,scale,d3c.u.get_address(0,0),1);
+                    }
+                }
                 ens.member.push_back(d3c);
             }
             dread=ReadSegyTrace(stdin);
             if(dread.ns<=0) readok=false;
-            cout << "n="<<n<<" k="<<k<<endl;
             ++n;
             k=n%3;
-            //DEBUG
         }
         cout << "Finished bundling 3C ensemble with "<<ens.member.size()
             << " 3C objects"<<endl
