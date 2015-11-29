@@ -221,13 +221,12 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
 
 void usage()
 {
-    cerr << "ParticleMotionVTKConverter db "
-        <<" (-a start_time end_time | -e evid) (-i infile) [-filter fstring -engine"
+    cerr << "ParticleMotionVTKConverter (-db dbname | -i infile)"
+        <<" (-a start_time end_time | -e evid) [-filter fstring -engine"
         <<" -pf pffile]"<<endl
+        << "Use -db for database input with -a or -e option"
+        << "Use -i for file input (-a and -e ignored in that mode)"
         << "Must use either -a for fixed time window or -e for one event"<<endl
-        << "Use -i to read from file infile created by boost serialization"<<endl
-        << "Warning:  if -e is used with -i require arrival.time attribute for each 3C ensemble member"<<endl
-        << " (default is to load data from dbname set as arg1 - arg1 is ignored if -i is used)" <<endl
         << "-filter overrides pf definition of default filter"<<endl
         << "-engine disables interactive scale editing"<<endl
         << "Use -pf to alter default control file ParticleMotionVTKConverter.pf"
@@ -237,7 +236,7 @@ void usage()
 bool SEISPP::SEISPP_verbose(false);
 int main(int argc, char **argv)
 {
-    if(argc<2) usage();
+    if(argc<3) usage();
     Pf *pf;
     if(pfread(const_cast<char *>("ParticleMotionVTKConverter"),&pf))
     {
@@ -247,7 +246,7 @@ int main(int argc, char **argv)
             <<endl;;
         usage();
     }
-    string dbname(argv[1]);
+    string dbname;
     string infile;
     bool abstime(false),eventmode(false);
     bool engine_mode(false);
@@ -256,7 +255,7 @@ int main(int argc, char **argv)
     string filtername_from_arglist("none");
     long evid;
     int i;
-    for(i=2;i<argc;++i)
+    for(i=1;i<argc;++i)
     {
         string sarg(argv[i]);
         if(sarg=="-a")
@@ -275,6 +274,13 @@ int main(int argc, char **argv)
             ++i;
             if(i>=argc) usage();
             evid=atol(argv[i]);
+        }
+        else if(sarg=="-db")
+        {
+            ++i;
+            if(i>=argc) usage();
+            dbname=string(argv[i]);
+            read_from_db=true;
         }
         else if(sarg=="-pf")
         {
@@ -306,8 +312,12 @@ int main(int argc, char **argv)
         else
             usage();
     }
-    if(!(eventmode || abstime) ) usage();
-    if((!read_from_db) && abstime)
+    if(read_from_db)
+    {
+        if(!(eventmode || abstime) ) 
+            usage();
+    }
+    else if(abstime)
     {
         cerr << "Illegal argument combination:   time interval not supported for file input"<<endl;
         usage();
@@ -427,7 +437,8 @@ int main(int argc, char **argv)
                 cout << "Raw Data "<<endl<< utmp <<endl;
                 */
                 ThreeComponentSeismogram work(*dptr);
-                work.ator(dptr->t0);
+                if(work.tref==absolute) 
+                    work.ator(dptr->t0);
                 //DEBUG
                 /*
                 utmp=tr(work.u);
