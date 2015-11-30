@@ -295,8 +295,9 @@ void run_vtk_converter(string dbname, double t0, double endtime, TimeWindow tw,
 }
 void usage()
 {
-    cerr << "PMVisualizer db (-e evid | -ts t0 ) (-3C sta | -comp XXX) "
-        <<"[-i infile -pf pffile]" <<endl;
+    cerr << "PMVisualizer (-db dbname | -i infile)  (-e evid | -ts t0 ) "
+        <<"(-3C sta | -comp XXX) "
+        <<"[-pf pffile]" <<endl;
     cerr << "Use -i to read from boost serialization file infile (default is load from db)"<<endl;
     exit(-1);
 }
@@ -305,10 +306,11 @@ int main(int argc, char **argv)
 {
     ios::sync_with_stdio();
     /* First as usual crack the command line. */
-    if(argc<6) usage();
-    string dbname(argv[1]);
+    if(argc<5) usage();
+    string dbname;
     string infile;
     bool file_input(false);
+    bool input_mode_set(false);
     long evid(-1);
     double starttime(0.0),endtime(0.0);
     bool event_mode(true);
@@ -318,7 +320,7 @@ int main(int argc, char **argv)
     string comp,sta;
     string sarg;
     int i;
-    for(i=2;i<argc;++i)
+    for(i=1;i<argc;++i)
     {
         sarg=string(argv[i]);
         if(sarg=="-comp")
@@ -328,6 +330,22 @@ int main(int argc, char **argv)
             if(i>=argc) usage();
             comp=string(argv[i]);
             plot_mode_set=true;
+        }
+        else if(sarg=="-i")
+        {
+            ++i;
+            if(i>=argc) usage();
+            infile=string(argv[i]);
+            file_input=true;
+            input_mode_set=true;
+        }
+        else if(sarg=="-db")
+        {
+            ++i;
+            if(i>=argc) usage();
+            dbname=string(argv[i]);
+            file_input=false;
+            input_mode_set=true;
         }
         else if(sarg=="-3C")
         {
@@ -364,8 +382,24 @@ int main(int argc, char **argv)
         else
             usage();
     }
-    if(!data_mode_set)usage();
-    if(!plot_mode_set)usage();
+    if(!data_mode_set)
+    {
+        if(!file_input)
+        {
+            cerr << "With db input you must specify -e or -ts"<<endl;
+            usage();
+        }
+    }
+    if(!plot_mode_set)
+    {
+        cerr << "You must specify either -comp or -3C"<<endl;
+        usage();
+    }
+    if(!input_mode_set)
+    {
+        cerr << "You must specify either -db or -i"<<endl;
+        usage();
+    }
     string cr=antelope_contrib_root_pf();
     string pffile=cr+"/PMVisualizer.pf";
     for(i=6;i<argc;++i)
@@ -412,7 +446,9 @@ int main(int argc, char **argv)
         if(file_input)
         {
             ThreeComponentEnsemble d3c;
+            cout << "Loading data from file "<<infile<<endl;
             d3c=load_data_from_file(infile);
+            cout << "Loaded ensemble with "<<d3c.member.size()<<" stations"<<endl;
             /* For now we only allow plotting one component in this input mode.
              Require in this case that comp is an integer.  */
             int ic=atoi(comp.c_str());
@@ -423,6 +459,8 @@ int main(int argc, char **argv)
                     <<"In file input mode this argument must be 0, 1 or 2"<<endl;
             }
             auto_ptr<TimeSeriesEnsemble> dtmp=ExtractComponent(d3c,ic);
+            //DEBUG
+            cout << "ExtractComponent ensemble size="<<dtmp->member.size()<<endl;
             /* Interface collision with a nasty inefficiency */
             d=(*dtmp);
         }

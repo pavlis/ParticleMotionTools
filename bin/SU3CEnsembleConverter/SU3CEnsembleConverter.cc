@@ -29,6 +29,25 @@ extern "C"{
 int xargc;
 char **xargv;
 }
+/* DEBUG routine */
+void print_tmatrix(ThreeComponentSeismogram d)
+{
+    int i,j;
+    for(i=0;i<3;++i)
+    {
+        for(j=0;j<3;++j)
+            cout << d.tmatrix[i][j]<<" ";
+        cout <<endl;
+    }
+    if(d.components_are_orthogonal)
+        cout << "components_are_orthogonal is set true"<<endl;
+    else
+        cout << "components_are_orthogonal is set false"<<endl;
+    if(d.components_are_cardinal)
+        cout << "components_are_cardinal is set true"<<endl;
+    else
+        cout << "components_are_cardinal is set false"<<endl;
+}
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
@@ -166,6 +185,11 @@ int main(int argc, char **argv)
             if(k==2)
             {
                 ThreeComponentSeismogram d3c(channels,0);
+                cout << "Transformation matrix from constructor"<<endl;
+                print_tmatrix(d3c);
+                d3c.rotate_to_standard();
+                cout << "Transformation matrix after rotate_to_standard"<<endl;
+                print_tmatrix(d3c);
                 if(apply_rotation)
                     d3c.rotate(rotation_angle);
                 if(convert_utm)
