@@ -10,8 +10,17 @@ class HFArray
     public:
         /*! \brief Construct from a text file.
 
+          Format is:
+          line 1:  ORIGIN lon lat elev(km)
+          line 2+"  staname lon lat elev(km) for geo coords
+            OR      staname x y z for cartesian coordinates
+
+          \param fname - file name of text file 
+          \param  geocoords - if true assume input is geographic 
+              coordinates (default is cartesian) 
+
           */
-        HFArray(string fname);
+        HFArray(string fname,bool geocoords=false);
         /*! \brief Construct from a css3.0 database. 
 
           The antelope css3.0 schema database uses a site table to 

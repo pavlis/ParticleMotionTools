@@ -6,7 +6,7 @@
 #include "gclgrid.h"
 using namespace std;
 using namespace SEISPP;
-HFArray::HFArray(string fname)
+HFArray::HFArray(string fname,bool geocoords)
 {
     string base_error("HFArray text file constructor:  ");;
     FILE *fp;
@@ -15,8 +15,12 @@ HFArray::HFArray(string fname)
         throw 
             SeisppError(base_error + "Open failed for input file "
                     + fname);
+    char tag[32];
     double olat,olon,oelev;
-    fscanf(fp,"%lf%lf%lf",&olat,&olon,&oelev);
+    fscanf(fp,"%s%lf%lf%lf",tag,&olon,&olat,&oelev);
+    if(string(tag)!="ORIGIN")
+        throw SeisppError(base_error + "format error\n"
+                + "First line must contain tag ORIGIN followed by lon,lat,elev");
     olat=rad(olat);
     olon=rad(olon);
     double oradius=r0_ellipse(olat)+oelev;
@@ -35,9 +39,21 @@ HFArray::HFArray(string fname)
     while(fscanf(fp,"%s%lf%lf%lf",csta,&x,&y,&z)==4)
     {
         sta=string(csta);
-        xs[0]=x;
-        xs[1]=y;
-        xs[2]=z;
+        if(geocoords)
+        {
+            /* When true we assume the order is lon,lat,elev(km) */
+            double r=r0_ellipse(y)-z;
+            Cartesian_point cp=this->coords.cartesian(y,x,r);
+            xs[0]=cp.x1;
+            xs[1]=cp.x2;
+            xs[2]=cp.x3;
+        }
+        else
+        {
+            xs[0]=x;
+            xs[1]=y;
+            xs[2]=z;
+        }
         stations.insert(pair<string,vector<double> >(sta,xs));
     }
 }
