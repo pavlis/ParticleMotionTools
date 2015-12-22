@@ -293,10 +293,72 @@ void run_vtk_converter(string dbname, double t0, double endtime, TimeWindow tw,
                 + "execlp failed running ParticleMotionVTKConverter");
     }catch(...){throw;};
 }
+/* This version is for a boost serialization file */
+void run_vtk_converter(string fname, TimeWindow tw, Metadata vtkparams,
+        string filter_used)
+{
+    const string base_error("run_vtk_converter procedure:  ");
+    const string output_pffile("ParticleMotionVTKConverter.pf");
+    int status(0),options(0);   // used for waitpid
+    try{
+        pid_t pid = fork();
+        if(pid<0)
+        {
+            cerr << "Fork failed in run_vtk_converter (routine that runs ParticleMotionVTKconverter)"
+                <<endl;
+            exit(-1);
+        }
+        else if(pid>0)
+        {
+            cout << "Parent waiting for child process with pid="<<pid<<" to exit"<<endl;
+            pid_t pid_from_wait=waitpid(pid,&status,options);
+            // Can probably eventually delete this
+            cout << "pid returned by waitpid="<<pid_from_wait<<endl;
+            if(WIFEXITED(status))
+                cout << "ParticleMotionVTKconverter exited normally"<<endl;
+            else
+            {
+                cout << "Something went wrong exiting ParticleMotionVTKconverter - exiting"<<endl;
+                exit(-1);
+            }
+            return;
+        }
+        /* Window may be absolute or relative, but for both modes we 
+           set the internal parameter used by ParticleMotionVTKConverter even
+           though a present this ony matters for event_mode.   Useful to 
+           preserve time in either case in pf file used as input to that program*/
+        vtkparams.put("process_window_start_time",tw.start);
+        vtkparams.put("process_window_end_time",tw.end);
+        /* Write results to a pf in the local directory.  This approach assumes
+           ParticleMotionVTKConverter uses the antelope pf search path to find
+           default parameters that are not set by the gui. */
+        ofstream opf;
+        opf.open(output_pffile.c_str());
+        if(opf.fail())
+            throw SeisppError(base_error
+                    + "open failed on Pf file="+output_pffile);
+        opf << vtkparams;
+        opf.close();
+        /* We will use execlp which we assume will find ParticleMotionVTKConverter
+           in the shell path. */
+        const string progname("ParticleMotionVTKConverter");
+        int iret;  // used to hold execlp return code 
+        string filterarg;
+        const string quote("\"");
+        filterarg=quote+filter_used+quote;
+        const string inflag("-i");
+        iret=execlp(progname.c_str(),progname.c_str(),
+                    inflag.c_str(),fname.c_str(),
+                    "-filter",filterarg.c_str(),
+                    "-engine",NULL);
+        if(iret) throw SeisppError(base_error
+                + "execlp failed running ParticleMotionVTKConverter");
+    }catch(...){throw;};
+}
 void usage()
 {
-    cerr << "PMVisualizer (-db dbname | -i infile)  (-e evid | -ts t0 ) "
-        <<"(-3C sta | -comp XXX) "
+    cerr << "PMVisualizer (-db dbname | -i infile)  (-e evid | -ts t0 ) "<<endl
+        <<"(-3C sta | -comp XXX) "<<endl
         <<"[-pf pffile]" <<endl;
     cerr << "Use -i to read from boost serialization file infile (default is load from db)"<<endl;
     exit(-1);
@@ -516,11 +578,16 @@ int main(int argc, char **argv)
             */
             Metadata vtkparams=win.get_parameters();
             string filter_used=win.get_filter();
-            if(event_mode)
-                run_vtk_converter(dbname,tw,vtkparams,evid,filter_used);
+            if(file_input)
+                run_vtk_converter(infile,tw,vtkparams,filter_used);
             else
-                run_vtk_converter(dbname,starttime,endtime,tw,
+            {
+                if(event_mode)
+                  run_vtk_converter(dbname,tw,vtkparams,evid,filter_used);
+                else
+                  run_vtk_converter(dbname,starttime,endtime,tw,
                         vtkparams,filter_used);
+            }
             cout << "Check output in paraview"<<endl;
             cout << "Try again?"<<endl
                 << "If so enter y, type any other key to exit"<<endl;
