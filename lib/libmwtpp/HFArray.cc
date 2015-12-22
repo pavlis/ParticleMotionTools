@@ -43,7 +43,7 @@ HFArray::HFArray(string fname,bool geocoords)
         {
             /* When true we assume the order is lon,lat,elev(km) */
             double r=r0_ellipse(y)-z;
-            Cartesian_point cp=this->coords.cartesian(y,x,r);
+            Cartesian_point cp=this->coords.cartesian(rad(y),rad(x),r);
             xs[0]=cp.x1;
             xs[1]=cp.x2;
             xs[2]=cp.x3;
