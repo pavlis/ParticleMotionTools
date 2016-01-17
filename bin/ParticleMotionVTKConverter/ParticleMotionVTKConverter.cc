@@ -118,6 +118,9 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
     const string base_error("write_animation_files:  ");
     const string fext(".vtp");
     try {
+        if(SEISPP_verbose)
+            cout << "Trying to create directory "<<dir<<endl;
+
         if(makedir(const_cast<char *>(dir.c_str())))
             throw SeisppError(base_error 
                     + "makedir failed to create directory="
@@ -135,7 +138,8 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
         string test;
         do {
             number_time_steps=trunc( (trange-twlen)/dt );
-            cout << "write_animation_files procedure:   "
+            if(SEISPP_verbose)
+                cout << "write_animation_files procedure:   "
                 << "Data time range is "
                    <<fulltimewindow.start<<" to "<<fulltimewindow.end<<endl
                 << "Current animation time window length="<<twlen
@@ -176,6 +180,9 @@ void write_animation_files(vector<ParticleMotionData>& pmdv,
             }
             else
             {
+                if(SEISPP_verbose)
+                    cout << "Writing data for time step "<<i<<" to file "
+                        << fname<<endl;
                 try{
                 WriteTimeWindow(pmdv,tw,fout);
                 }catch(SeisppError& serr)
@@ -223,7 +230,7 @@ void usage()
 {
     cerr << "ParticleMotionVTKConverter (-db dbname | -i infile)"
         <<" (-a start_time end_time | -e evid) [-filter fstring -engine"
-        <<" -pf pffile]"<<endl
+        <<" -pf pffile -v]"<<endl
         << "Use -db for database input with -a or -e option"
         << "Use -i for file input (-a and -e ignored in that mode)"
         << "Must use either -a for fixed time window or -e for one event"<<endl
@@ -309,6 +316,8 @@ int main(int argc, char **argv)
             infile=string(argv[i]);
             read_from_db=false;
         }
+        else if(sarg=="-v")
+            SEISPP_verbose=true;
         else
             usage();
     }
