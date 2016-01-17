@@ -69,6 +69,7 @@ template <class OutputObject> void write_object(OutputObject& d,
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
+    if(argc!=1) usage();
     try{
         /* This allows input and output of objects through
            the boost serialization mechanism.   This assumes
