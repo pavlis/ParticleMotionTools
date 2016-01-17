@@ -464,7 +464,7 @@ int main(int argc, char **argv)
     }
     string cr=antelope_contrib_root_pf();
     string pffile=cr+"/PMVisualizer.pf";
-    for(i=6;i<argc;++i)
+    for(i=7;i<argc;++i)
     {
         sarg=string(argv[i]);
         if(sarg=="-pf")
