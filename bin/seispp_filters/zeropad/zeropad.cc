@@ -68,7 +68,7 @@ ThreeComponentSeismogram pad_3cseis(ThreeComponentSeismogram& d,double plen,doub
         /* now do a linear taper */
         double wt0,wt;
         wt0=1.0/((double)ntaper);
-        for(j=1,wt=wt0;j<ntaper-1;++j,wt+=wt0)
+        for(j=0,wt=wt0;j<ntaper-1;++j,wt+=wt0)
             for(i=0;i<3;++i)
                 upad(i,j+npad)*=wt;
         d.u=upad;
