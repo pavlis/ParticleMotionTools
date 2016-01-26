@@ -9,3 +9,4 @@ channel_orientation &Tbl{
 }
 apply_rotation true
 rotation_angle 65.0
+load_coordinates true

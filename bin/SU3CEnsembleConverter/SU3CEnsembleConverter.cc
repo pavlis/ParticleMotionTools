@@ -7,7 +7,7 @@
 #include "LatLong-UTMconversion.h"
 /* This could be in an include, but will insert this prototype here
    rather than make an include file with one line.*/
-TimeSeries ReadSegyTrace(FILE *);
+TimeSeries ReadSegyTrace(FILE *,bool load_coordinates);
 
 void usage()
 {
@@ -160,7 +160,8 @@ int main(int argc, char **argv)
            interface to SU was designed to return a TimeSeries object.
            */
         bool readok;
-        TimeSeries dread=ReadSegyTrace(stdin);
+        bool load_coordinates=control.get_bool("load_coordinates");
+        TimeSeries dread=ReadSegyTrace(stdin,load_coordinates);
         if(dread.ns<=0) 
         {
             cerr << "No data to process.   ReadSegyTrace hit EOF immediately"
@@ -221,7 +222,7 @@ int main(int argc, char **argv)
                 }
                 ens.member.push_back(d3c);
             }
-            dread=ReadSegyTrace(stdin);
+            dread=ReadSegyTrace(stdin,load_coordinates);
             if(dread.ns<=0) readok=false;
             ++n;
             k=n%3;

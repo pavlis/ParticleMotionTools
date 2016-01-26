@@ -21,7 +21,7 @@ typedef char *cwp_String;
 #include "segy.h"
 #include "TimeSeries.h"
 using namespace SEISPP;
-TimeSeries ReadSegyTrace(FILE *fp)
+TimeSeries ReadSegyTrace(FILE *fp,bool load_coordinates)
 {
     const string base_error("ReadSegyTrace:  ");
     segy tr;
@@ -71,39 +71,42 @@ TimeSeries ReadSegyTrace(FILE *fp)
         // another useful alias
         d.put("evid",tr.ep);
         d.put("nvs",tr.nvs);
-        /* These are coordinates.  We convert them to 
-           real numbers here from su where they are stored
-           as int.  su borrows scalco from segy to add precision
-           which we retain here. */
-        double rx,ry,sx,sy;
-        double scale=(double)(tr.scalco);
-        rx=(double)(tr.gx);
-        rx/=scale;
-        d.put("rx",rx); // note conversion of gx,gy to rx,ry
-        ry=(double)(tr.gy);
-        ry/=scale;
-        d.put("ry",ry);
-        sx=(double)(tr.sx);
-        sx/=scale;
-        d.put("sx",sx);
-        sy=(double)(tr.sy);
-        sy/=scale;
-        d.put("sy",sy);
-        d.put("relev",tr.gelev);
-        /* To mesh with ParticleMotionVTKconverter we have to store the
-           sensor elevation in units of km under the site.elev tag.*/
-        double elev=(double)tr.gelev;
-        elev /= 1000.0;
-        d.put("site.elev",(double)tr.gelev);
-        d.put("selev",tr.selev);
-        /* We save offset in the the original segy int form and compute
-           it form the other coordinates.   The later can be more 
-           accurate when scalco is greater than one.*/
-        double offset;
-        elev=(double)(tr.gelev-tr.selev);
-        offset=sqrt((rx-sx)*(rx-sx) + (ry-sy)*(ry-sy) + elev*elev);
-        d.put("offset_from_segy",(double)tr.offset);
-        d.put("offset",offset);
+        if(load_coordinates)
+        {
+            /* These are coordinates.  We convert them to 
+               real numbers here from su where they are stored
+               as int.  su borrows scalco from segy to add precision
+               which we retain here. */
+            double rx,ry,sx,sy;
+            double scale=(double)(tr.scalco);
+            rx=(double)(tr.gx);
+            rx/=scale;
+            d.put("rx",rx); // note conversion of gx,gy to rx,ry
+            ry=(double)(tr.gy);
+            ry/=scale;
+            d.put("ry",ry);
+            sx=(double)(tr.sx);
+            sx/=scale;
+            d.put("sx",sx);
+            sy=(double)(tr.sy);
+            sy/=scale;
+            d.put("sy",sy);
+            d.put("relev",tr.gelev);
+            /* To mesh with ParticleMotionVTKconverter we have to store the
+               sensor elevation in units of km under the site.elev tag.*/
+            double elev=(double)tr.gelev;
+            elev /= 1000.0;
+            d.put("site.elev",(double)tr.gelev);
+            d.put("selev",tr.selev);
+            /* We save offset in the the original segy int form and compute
+               it form the other coordinates.   The later can be more 
+               accurate when scalco is greater than one.*/
+            double offset;
+            elev=(double)(tr.gelev-tr.selev);
+            offset=sqrt((rx-sx)*(rx-sx) + (ry-sy)*(ry-sy) + elev*elev);
+            d.put("offset_from_segy",(double)tr.offset);
+            d.put("offset",offset);
+        }
         /* Double these in metadata */
         d.put("nsamp",(int)tr.ns);
         d.put("int_dt",(int)tr.dt);

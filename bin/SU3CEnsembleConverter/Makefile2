@@ -1,5 +1,5 @@
 BIN=SU3CEnsembleConverter
-
+PF=SU3CEnsembleConverter.pf
 cxxflags=-g -I$(CWPROOT)/include
 ldflags=-L$(ANTELOPE)/contrib/static -L$(CWPROOT)/lib
 ldlibs=-lseispp -lgclgrid -lgeocoords $(DBLIBS) $(TRLIBS) -lperf -lsu -lcwp -lpar -lboost_serialization
