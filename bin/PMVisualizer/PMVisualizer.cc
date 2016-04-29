@@ -285,7 +285,7 @@ void run_vtk_converter(string dbname, double t0, double endtime, TimeWindow tw,
         filterarg=quote+filter_used+quote;
         cout << "Running "<<progname.c_str()<< " with -a "
                 << st << " "<<et<<" -filter "<<filterarg<<endl;
-        iret=execlp(progname.c_str(),progname.c_str(),dbname.c_str(),
+        iret=execlp(progname.c_str(),progname.c_str(),"-db",dbname.c_str(),
                     "-a",st.c_str(),et.c_str(),
                     "-filter",filterarg.c_str(),
                     "-engine",NULL);
