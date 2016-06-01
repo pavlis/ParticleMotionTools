@@ -8,6 +8,7 @@ using namespace std;
 class HFArray 
 {
     public:
+        HFArray(){};
         /*! \brief Construct from a text file.
 
           Format is:
