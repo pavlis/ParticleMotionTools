@@ -338,7 +338,7 @@ int main(int argc, char **argv)
         if(sap_mode)
         {
             string array_file=md.get_string("array_geometry_file");
-            array=new HFArray(array_file);
+            array=new HFArray(array_file,true);
         }
         MetadataList tracemdl=pfget_mdlist(pf,"trace_mdlist");
         MetadataList ensemblemdl=pfget_mdlist(pf,"ensemble_mdlist");
