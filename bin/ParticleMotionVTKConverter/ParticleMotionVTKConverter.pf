@@ -1,3 +1,5 @@
+small_aperture_array_mode true
+array_geometry_file  dugl_hfarray.txt
 trace_mdlist &Tbl{
 time real
 endtime real
