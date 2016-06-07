@@ -124,8 +124,6 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
           cerr << "boost archive error message used to catch eof"<<endl;
           cerr << e.what()<<endl;
         }
-        cerr << "Template seispp unix filter:  copying stdin to stdout"
-            <<endl;
     }catch(SeisppError& serr)
     {
         serr.log_error();
