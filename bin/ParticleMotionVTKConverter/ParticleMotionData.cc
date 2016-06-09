@@ -20,6 +20,9 @@ ParticleMotionData::ParticleMotionData(ThreeComponentSeismogram& d,
         x0[1]=cp.x2;
         x0[2]=cp.x3;
         //DEBUG
+        cout << "Station "<< this->get_string("sta")
+            << " has geo coords: "<< lat<<", "<<lon<<", "<<elev<<endl
+            << "Cartesian location="<<x0[0]<<", "<<x0[1]<<", "<<x0[2]<<endl;
         /*
         dmatrix utmp;
         utmp=tr(this->u);
