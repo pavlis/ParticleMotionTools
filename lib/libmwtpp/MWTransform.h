@@ -3,6 +3,7 @@
 #include "stock.h"
 #include "SeisppError.h"
 #include "ThreeComponentSeismogram.h"
+#include "ComplexTimeSeries.h"
 #include "ensemble.h"
 using namespace std;
 using namespace SEISPP;
