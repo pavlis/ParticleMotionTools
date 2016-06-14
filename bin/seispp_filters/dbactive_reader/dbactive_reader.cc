@@ -82,7 +82,7 @@ ThreeComponentEnsemble ExtractWindowedData(ThreeComponentEnsemble& full_line,
 {
   try{
     TimeWindow winthis(exwin);
-    winthis.shift(sdata.time);
+    winthis=winthis.shift(sdata.time);
 
     /* Note it is important that the origin data for the array is stored
     in the ensemble metadata - done in load_precision_coordinates*/
@@ -167,11 +167,11 @@ template <class OutputObject> void write_object(OutputObject& d,
     }
 }
 
-bool SEISPP::SEISPP_verbose(true);
+bool SEISPP::SEISPP_verbose(false);
 int main(int argc, char **argv)
 {
     int i;
-    const int narg_required(1);
+    const int narg_required(2);
     if(argc<narg_required) usage();
     string dbname(argv[1]);
     string pffile("dbactive_reader.pf");
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
     string coordfile("NotUsed");
     string logfile("dbactive_reader.log");
 
-    for(i=narg_required+1;i<argc;++i)
+    for(i=narg_required;i<argc;++i)
     {
         string sarg(argv[i]);
         if(sarg=="-g")
