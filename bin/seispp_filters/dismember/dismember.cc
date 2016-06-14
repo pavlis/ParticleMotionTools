@@ -73,7 +73,7 @@ template <class Tens,class Tmem> int write_ensemble(Tens& d,
                 +"Do you have write permission for output directory?");
     }
 }
-bool SEISPP::SEISPP_verbose(true);
+bool SEISPP::SEISPP_verbose(false);
 int main(int argc, char **argv)
 {
     int i;
@@ -112,8 +112,8 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
                 else
                 {
                   d3c=read_object<ThreeComponentEnsemble>(ia);
-                  count=write_ensemble<TimeSeriesEnsemble,TimeSeries>
-                      (d,oa);
+                  count=write_ensemble<ThreeComponentEnsemble,ThreeComponentSeismogram>
+                      (d3c,oa);
                   nd+=count;
                 }
                 ++nensembles;
