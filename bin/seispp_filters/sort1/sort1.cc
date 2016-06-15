@@ -28,7 +28,7 @@ typedef list<SeisIterator> SortedDataList;
    the type InputObject as the template argument in standard
    C++ convention.   Note we return the object.   If
    the object you are reading is huge you should consider
-   modifying this to return a pointer or auto_ptr.*/
+   modifying this to return a pointer or shared_ptr.*/
 template <class InputObject> InputObject
     read_object(boost::archive::text_iarchive& ia)
 {
@@ -61,9 +61,9 @@ template <class OutputObject> void write_object(OutputObject& d,
                 +"Do you have write permission for output directory?");
     }
 }
-auto_ptr<SeisVector> load_data(boost::archive::text_iarchive& ia)
+shared_ptr<SeisVector> load_data(boost::archive::text_iarchive& ia)
 {
-  auto_ptr<SeisVector> dptr;
+  shared_ptr<SeisVector> dptr(new SeisVector);
   int nseis(0);
   ThreeComponentSeismogram d;
   try{
@@ -106,23 +106,16 @@ SortedDataList int_metadata_sort(SeisVector& d,string key)
   /* this section could and should be made into a template and used
   for both of these procedures */
   SortedDataList result;
-  multimap<int,SeisIterator>::iterator mptr,merptr;
+  multimap<int,SeisIterator>::iterator mptr;
   for(mptr=xref.begin();mptr!=xref.end();++mptr)
   {
-    int thiskey;
-    thiskey=mptr->first;
-    std::pair<multimap<int,SeisIterator>::iterator,
-        multimap<int,SeisIterator>::iterator> ret;
-    ret=xref.equal_range(thiskey);
-    for(merptr=ret.first;merptr!=ret.second;++merptr)
-    {
-      result.push_back(merptr->second);
-    }
+      result.push_back(mptr->second);
   }
   return result;
 }
 SortedDataList string_metadata_sort(SeisVector& d,string key)
 {
+  SortedDataList result;
   multimap<string,SeisIterator> xref;
   vector<ThreeComponentSeismogram>::iterator dptr;
   int i;
@@ -142,22 +135,16 @@ SortedDataList string_metadata_sort(SeisVector& d,string key)
           << " the key "<<" defined"<<endl;
     }
   }
-  SortedDataList result;
-  multimap<string,SeisIterator>::iterator mptr,merptr;
+  multimap<string,SeisIterator>::iterator mptr;
   for(mptr=xref.begin();mptr!=xref.end();++mptr)
   {
-    string thiskey;
-    thiskey=mptr->first;
-    std::pair<multimap<string,SeisIterator>::iterator,
-        multimap<string,SeisIterator>::iterator> ret;
-    ret=xref.equal_range(thiskey);
-    for(merptr=ret.first;merptr!=ret.second;++merptr)
-    {
-      result.push_back(merptr->second);
-    }
+      //DEBUG testing
+      //cerr << mptr->second->get_string("sta")<<" "<<mptr->second->get_int("ffid")<<endl;
+      result.push_back(mptr->second);
   }
   return result;
 }
+
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
@@ -184,7 +171,7 @@ int main(int argc, char **argv)
         index of each member.   The multimap intrinsically sorts to
         weak order so the output can then be produced by using iterators
         on the multimap. */
-        auto_ptr<SeisVector> d = load_data(ia);
+        shared_ptr<SeisVector> d = load_data(ia);
         /* Each of the two procedures below return this list is the
         sequence of iterators used to build the output */
         SortedDataList outlist;
@@ -198,6 +185,8 @@ int main(int argc, char **argv)
         SortedDataList::iterator optr;
         for(optr=outlist.begin();optr!=outlist.end();++optr)
         {
+            //DEBUG
+            //cerr << (*optr)->get_int("ffid")<<" "<<(*optr)->get_string("sta")<<endl;
           write_object<ThreeComponentSeismogram>(*(*optr),oa);
         }
     }catch(SeisppError& serr)

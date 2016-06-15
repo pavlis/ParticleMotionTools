@@ -100,7 +100,7 @@ bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
     int i;
-    if(argc<2)usage();
+    if(argc<3)usage();
     list<string> ikeys,skeys;
     for(i=1;i<argc;++i)
     {
@@ -176,6 +176,7 @@ int main(int argc, char **argv)
               }
               else
               {
+                ++ngather;
                 oa << dout;
                 /* This clears dout and then initializes ensemble metadata
                 and sets svaltest and ivaltest with values from d.*/
@@ -184,6 +185,7 @@ int main(int argc, char **argv)
             }
           }catch(boost::archive::archive_exception const& e)
           {
+            ++ngather;
             oa << dout;
             /* Oddity of boost serialization implementation is this seems
             the only way to string objects together and have a data driven
@@ -198,10 +200,11 @@ int main(int argc, char **argv)
     }catch(SeisppError& serr)
     {
         serr.log_error();
+        exit(-1);
     }
     catch(std::exception& stexc)
     {
         cerr << stexc.what()<<endl;
+        exit(-1);
     }
-    exit(-1);
 }
