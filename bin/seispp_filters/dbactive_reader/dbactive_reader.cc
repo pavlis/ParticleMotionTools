@@ -314,7 +314,7 @@ int main(int argc, char **argv)
         {
           write_object<ThreeComponentEnsemble>(dout,oa);
           log << "Wrote "<<dout.member.size()<<" seismograms for ffid="
-              << dout.get_int("ffid");
+              << dout.get_int("ffid")<<endl;
         }
       }
     }catch(SeisppError& serr)
