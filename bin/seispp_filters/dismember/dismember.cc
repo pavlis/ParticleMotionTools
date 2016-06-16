@@ -122,7 +122,8 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
         {
           cerr << "Read "<<nensembles<<" and wrote "<<nd<<" seismograms to output"<<endl;
           cerr << "boost archive error message used to catch eof"<<endl;
-          cerr << e.what()<<endl;
+          cerr << e.what()<<endl
+              << "This message is normal and should be ignored"<<endl;
         }
     }catch(SeisppError& serr)
     {
