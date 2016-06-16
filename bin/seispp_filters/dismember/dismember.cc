@@ -26,28 +26,6 @@ void usage()
         <<endl;
     exit(-1);
 }
-/* This is a generic routine to read a single object from
-   a boost text archive.   The object type is defined by
-   the type InputObject as the template argument in standard
-   C++ convention.   Note we return the object.   If
-   the object you are reading is huge you should consider
-   modifying this to return a pointer or auto_ptr.*/
-template <class InputObject> InputObject
-    read_object(boost::archive::text_iarchive& ia)
-{
-    InputObject d;
-    try{
-        ia>>d;
-    }catch(...)
-    {
-        /* This template ignores errors thrown by boost
-           and converts to a standard error for the seispp
-           library - perhaps not ideal but what is done here. */
-        throw SeisppError(string("read_object failed:  ")
-                    + "Check that input file is a boost text archive file");
-    }
-    return d;
-}
 /* Generic algorithm to serialize an ensemble.   Copies the
 ensemble metadatra to each output seismogram.   Returns
 count of the number of seismograms written.*/
@@ -104,14 +82,14 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
                 int count;
                 if(scalar_mode)
                 {
-                  d=read_object<TimeSeriesEnsemble>(ia);
+                  ia >>d;
                   count=write_ensemble<TimeSeriesEnsemble,TimeSeries>
                       (d,oa);
                   nd+=count;
                 }
                 else
                 {
-                  d3c=read_object<ThreeComponentEnsemble>(ia);
+                  ia >> d3c;
                   count=write_ensemble<ThreeComponentEnsemble,ThreeComponentSeismogram>
                       (d3c,oa);
                   nd+=count;
@@ -120,7 +98,7 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
             }
         }catch(boost::archive::archive_exception const& e)
         {
-          cerr << "Read "<<nensembles<<" and wrote "<<nd<<" seismograms to output"<<endl;
+          cerr << "Read "<<nensembles<<" ensembles and wrote "<<nd<<" seismograms to output"<<endl;
           cerr << "boost archive error message used to catch eof"<<endl;
           cerr << e.what()<<endl
               << "This message is normal and should be ignored"<<endl;
