@@ -138,8 +138,6 @@ SortedDataList string_metadata_sort(SeisVector& d,string key)
   multimap<string,SeisIterator>::iterator mptr;
   for(mptr=xref.begin();mptr!=xref.end();++mptr)
   {
-      //DEBUG testing
-      //cerr << mptr->second->get_string("sta")<<" "<<mptr->second->get_int("ffid")<<endl;
       result.push_back(mptr->second);
   }
   return result;
@@ -185,8 +183,6 @@ int main(int argc, char **argv)
         SortedDataList::iterator optr;
         for(optr=outlist.begin();optr!=outlist.end();++optr)
         {
-            //DEBUG
-            //cerr << (*optr)->get_int("ffid")<<" "<<(*optr)->get_string("sta")<<endl;
           write_object<ThreeComponentSeismogram>(*(*optr),oa);
         }
     }catch(SeisppError& serr)
