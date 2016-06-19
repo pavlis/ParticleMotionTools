@@ -21,13 +21,15 @@ using namespace std;   // most compilers do not require this
 using namespace SEISPP;  //This is essential to use SEISPP library
 void usage()
 {
-    cerr << "fragment basename [-dir outdir]"
+    cerr << "fragment basename [-dir outdir -v]"
         <<endl
         << "seispp filter fragments file with multiple ensembles into individual files"
         <<endl
         << "basename is root name for each ensemble.  Adds a sequence number for each ensemble"
         <<endl
         << "-dir optional write to outdir (default is .)"
+        <<endl
+        << "-v verbose output (mostly logs each ensembles gather metadata"
         <<endl;
     exit(-1);
 }
@@ -78,6 +80,8 @@ int main(int argc, char **argv)
                 usage();
             }
         }
+        else if(sarg=="-v")
+            SEISPP_verbose=true;
         else
             usage();
     }
@@ -100,6 +104,12 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
                 sprintf(fname,"%s_%d",basename.c_str(),nensembles);
                 string path;
                 path=outdir+"/"+fname;
+                if(SEISPP_verbose)
+                {
+                    cerr << "ensemble (gather) metadata for output file "
+                        << path<<endl;
+                    cerr << dynamic_cast<Metadata&>(d3c)<<endl;
+                }
                 ofstream out(path.c_str(),ios::out);
                 if(!out)
                 {
