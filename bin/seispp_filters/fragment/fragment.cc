@@ -90,6 +90,7 @@ int main(int argc, char **argv)
         boost::archive::text_iarchive ia(cin);
         ThreeComponentEnsemble d3c;
         int nensembles(0);
+        int nseis(0);
         /* This approach is the one described at this URL to
            stop on EOF - not the most elegant since it requires
            one to use an exception to terminate the output, but
@@ -123,11 +124,13 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
                     (d3c,oa);
                 out.close();
                 ++nensembles;
+                nseis+=count;
             }
         }catch(boost::archive::archive_exception const& e)
         {
           if(Verbose){
           cerr << "Processed "<<nensembles<<" ensembles"<<endl
+              << "with a total of "<<nseis<<" three component seismograms"<<endl
               << " Look for output in directory "<<outdir<<endl;
           cerr << "boost archive error message used to catch eof"<<endl;
           cerr << e.what()<<endl
