@@ -48,8 +48,8 @@ template <class Tens,class Tmem> int write_ensemble(Tens& d,
         /* this little procedure makes the copy of metadata
         pretty trivial */
         copy_selected_metadata(ensmd,dynamic_cast<Metadata&>(d.member[i]),keylist);
-        oa << d.member[i];
       }
+      oa << d;
       return i;
     }catch(...)
     {
