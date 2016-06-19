@@ -61,6 +61,7 @@ template <class Tens,class Tmem> int write_ensemble(Tens& d,
 bool SEISPP::SEISPP_verbose(false);
 int main(int argc, char **argv)
 {
+    bool Verbose(false);
     int i;
     if(argc<2) usage();
     string outdir(".");
@@ -81,7 +82,7 @@ int main(int argc, char **argv)
             }
         }
         else if(sarg=="-v")
-            SEISPP_verbose=true;
+            Verbose=true;
         else
             usage();
     }
@@ -104,7 +105,7 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
                 sprintf(fname,"%s_%d",basename.c_str(),nensembles);
                 string path;
                 path=outdir+"/"+fname;
-                if(SEISPP_verbose)
+                if(Verbose)
                 {
                     cerr << "ensemble (gather) metadata for output file "
                         << path<<endl;
@@ -125,11 +126,13 @@ http://stackoverflow.com/questions/7111041/boost-serialization-multiple-objects
             }
         }catch(boost::archive::archive_exception const& e)
         {
+          if(Verbose){
           cerr << "Processed "<<nensembles<<" ensembles"<<endl
               << " Look for output in directory "<<outdir<<endl;
           cerr << "boost archive error message used to catch eof"<<endl;
           cerr << e.what()<<endl
               << "This message is normal and should be ignored"<<endl;
+          }
         }
     }catch(SeisppError& serr)
     {
