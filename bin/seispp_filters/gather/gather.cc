@@ -169,6 +169,7 @@ int main(int argc, char **argv)
                 ivaltest.push_back(itmp);
                 dout.put(*iptr,itmp);
               }
+              dout.member.push_back(d);
             }
             else
             {
@@ -183,6 +184,7 @@ int main(int argc, char **argv)
                 /* This clears dout and then initializes ensemble metadata
                 and sets svaltest and ivaltest with values from d.*/
                 reset_ensemble(d,skeys,ikeys,dout, svaltest,ivaltest);
+                dout.member.push_back(d);
               }
             }
           }catch(boost::archive::archive_exception const& e)
