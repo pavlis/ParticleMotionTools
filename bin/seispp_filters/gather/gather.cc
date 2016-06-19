@@ -87,11 +87,13 @@ void reset_ensemble(ThreeComponentSeismogram& d,list<string> skeys,
     {
       string sval=d.get_string(*sptr);
       svaltest.push_back(sval);
+      dout.put(*sptr,sval);
     }
     for(iptr=ikeys.begin();iptr!=ikeys.end();++iptr)
     {
       int ival=d.get_int(*iptr);
       ivaltest.push_back(ival);
+      dout.put(*iptr,ival);
     }
   }catch(...){throw;};
 }
