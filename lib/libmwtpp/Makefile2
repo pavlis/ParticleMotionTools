@@ -3,12 +3,11 @@ INCLUDE=HFArray.h MWTransform.h PMTimeSeries.h ParticleMotionEllipse.h ParticleM
 LICENSES=LICENSE_libmwtpp
 SUBDIR=/contrib
 
-cxxflags=-I/opt/boost/include
 
 include $(ANTELOPEMAKE)
 include $(ANTELOPEMAKELOCAL)
 
-CXXFLAGS += -I$(ANTELOPE)/contrib/include
+CXXFLAGS += -I$(BOOSTINCLUDE)
 OBJS=	# list all objects to put into the library
 OBJS=HFArray.o MWTBundle.o MWTransform.o MWTMatrix.o MWTdata.o MWTwaveform.o \
          ParticleMotionEllipse.o ParticleMotionError.o  PMTimeSeries.o
