@@ -289,6 +289,9 @@ int main(int argc, char **argv)
             <<" to "<<strtime(full_read_window.end)<<endl;
         exit(-1);
       }
+      log << "Reading block of data for time spanned by these shots"<<endl
+          << "Start time="<< strtime(full_read_window.start)
+          << " end time="<< strtime(full_read_window.end)<<endl;
       /* This line reads the time period and bundles data to 3c objects.
       It does 90% of the work of this program. */
       ThreeComponentEnsemble full_line(dbh,full_read_window,scm);
@@ -303,7 +306,7 @@ int main(int argc, char **argv)
       time windows around each shot time.   We use the GapDefinition object
       to keep only data marked as usable. */
       vector<SourceData>::iterator sdptr;
-      log << "Starting to ensemble data to stdout"<<endl;
+      log << "Starting to write ensemble data to stdout"<<endl;
       for(sdptr=source_coordinates.begin();sdptr!=source_coordinates.end();++sdptr)
       {
         ThreeComponentEnsemble dout=ExtractWindowedData(full_line, *sdptr,
