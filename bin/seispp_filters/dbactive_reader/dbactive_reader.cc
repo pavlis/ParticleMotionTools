@@ -276,8 +276,11 @@ int main(int argc, char **argv)
         source_coordinates.push_back(shotcorr);
       }
       TimeWindow full_read_window=GetTimeRange(source_coordinates);
-      full_read_window.start -= padtime;
-      full_read_window.end += padtime;
+      /* This guarantees a generous padding */
+      full_read_window.start -= fabs(data_window.start);
+      full_read_window.start -= 2.0*padtime;
+      full_read_window.end += fabs(data_window.end);
+      full_read_window.end += 2.0*padtime;
       if(fabs(full_read_window.end-full_read_window.start)>mrwl)
       {
         cerr << "Time window of shot time data read from stdin exceeds "
