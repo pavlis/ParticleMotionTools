@@ -8,7 +8,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include "seispp.h"
 #include "ensemble.h"
-#include "PMTimeSeries.h"
+//#include "PMTimeSeries.h"
 using namespace std;   // most compilers do not require this
 using namespace SEISPP;  //This is essential to use SEISPP library
 void usage()
@@ -234,7 +234,10 @@ int main(int argc, char **argv)
                 fofflist=build_index<ThreeComponentEnsemble>(ifs);
                 break;
             case PMTS:
-                fofflist=build_index<PMTimeSeries>(ifs);
+                cerr << "PMTimeSeries not yet supported"
+                    <<"Cannot run"<<endl;
+                exit(-1);
+                //fofflist=build_index<PMTimeSeries>(ifs);
                 break;
             default:
                 cerr << "Coding problem - dtype variable does not match enum"
@@ -257,7 +260,7 @@ int main(int argc, char **argv)
                     d=read_object<ThreeComponentEnsemble>(ia);
                     break;
                 case PMTS:
-                    d=read_object<PMTimeSeries>(ia);
+                    //d=read_object<PMTimeSeries>(ia);
                     break;
                 default:
                     cerr << "Unrecognized data type:  This should not happen"
