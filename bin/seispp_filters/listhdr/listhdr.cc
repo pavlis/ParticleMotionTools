@@ -44,18 +44,26 @@ template <class InputObject> Metadata
     return Metadata(d);
 }
 template <class InputObject> vector<size_t> 
-        build_index(ifstream& ifs)
+        build_index(string fname)
 {
     /* Safety valve to avoid a runaway */
     int nd(0);
     const int ndmax(1000000);
+    ifstream ifs;
+    ifs.open(fname.c_str(),ios::in);
+    if(!ifs)
+        throw SeisppError(string("InputObject procedure: ")
+                + "cannot open file="+fname+" for input");
     vector<size_t> foff_values;
     boost::archive::text_iarchive ia(ifs);
     InputObject d;
     do{
       try{
-        ia >> d;
         size_t foff=ifs.tellg();
+        ia >> d;
+        /* Because this loop is exited by the (evil) 
+         * method of an exception handler we don't push the foff
+         * value until here  - the loops exits when read fails*/
         foff_values.push_back(foff);
         ++nd;
       }catch(boost::archive::archive_exception const& e)
@@ -63,6 +71,7 @@ template <class InputObject> vector<size_t>
           break;
       }
     }while(nd<ndmax);  // safer than infiite loop
+    ifs.close();
     return foff_values; 
 }
 /*! Simple class to drive csv outputs in this program. */
@@ -213,31 +222,25 @@ int main(int argc, char **argv)
     }
     try{
         AllowedObjects dtype=get_object_type(otype);
-        ifstream ifs;
-        ifs.open(infile.c_str(),ios::in);
-        if(!ifs)
-        {
-            cerr << "Open failed on input data file"<<infile<<endl;
-            exit(-1);
-        }
         vector<MetadataComponent> csv_format_info;
         if(csv_output)
             csv_format_info=parse_csv_format_file(fname_csvo);
-        boost::archive::text_iarchive ia(ifs);
         vector<size_t> fofflist;
         switch (dtype)
         {
             case TCS:
-                fofflist=build_index<ThreeComponentSeismogram>(ifs);
+                fofflist=build_index<ThreeComponentSeismogram>(infile);
                 break;
             case TCE:
-                fofflist=build_index<ThreeComponentEnsemble>(ifs);
+                cout << "Calling build_index"<<endl;
+                fofflist=build_index<ThreeComponentEnsemble>(infile);
+                cout << "Built index of size="<<fofflist.size()<<endl;
                 break;
             case PMTS:
                 cerr << "PMTimeSeries not yet supported"
                     <<"Cannot run"<<endl;
                 exit(-1);
-                //fofflist=build_index<PMTimeSeries>(ifs);
+                //fofflist=build_index<PMTimeSeries>(infile);
                 break;
             default:
                 cerr << "Coding problem - dtype variable does not match enum"
@@ -245,6 +248,17 @@ int main(int argc, char **argv)
                     << "Fatal error - bug fix required. "<<endl;
                 exit(-1);
         };
+        /* The above opens and closes infile.  I found boost serialization
+         * throws an exception saying invalid signature in when you try to 
+         * manipulate the ifstream used to construt the archive object */
+        ifstream ifs;
+        ifs.open(infile.c_str(),ios::in);
+        if(!ifs)
+        {
+            cerr << "Open failed on input data file"<<infile<<endl;
+            exit(-1);
+        }
+        boost::archive::text_iarchive ia(ifs);
         int nd=fofflist.size();
         for(i=0;i<nd;++i)
         {
@@ -274,7 +288,11 @@ int main(int argc, char **argv)
                 WriteToCSVFile(d,cout,csv_format_info);
             }
             else
+            {
+                cout << "Metadata for file index position="<<i
+                    << " at foff="<<foff<<endl;
                 cout << d;
+            }
 
         }
     }catch(SeisppError& serr)
