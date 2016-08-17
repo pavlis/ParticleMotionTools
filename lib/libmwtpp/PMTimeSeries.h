@@ -76,6 +76,12 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         \exception Throws a SeisppError object if i is out of range. 
         */
         ParticleMotionError errors(int i);
+
+
+        vector<ParticleMotionEllipse> get_pmdata();
+        vector<ParticleMotionError> get_pmerr();
+
+
         /*! Zero any data defined by a gap. 
 
           Warning this is not fully implemented. */
