@@ -74,7 +74,7 @@ set<string> surface_sites()
 bool SEISPP::SEISPP_verbose(true);
 int main(int argc, char **argv)
 {
-    if(argc==1) usage();
+    if(argc!=1) usage();
     set<string> surfsta=surface_sites();
     set<string>::iterator ssptr;
     try{
