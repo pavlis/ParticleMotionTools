@@ -90,15 +90,19 @@ ThreeComponentEnsemble ExtractWindowedData(ThreeComponentEnsemble& full_line,
             full_line.member.size());
     /* The source coordinates for this ensemble are constant so we
       compute them now and just post them to each windowed seismogram.
-      Note this computation assumes lat and lon were converted to radians */
-    Cartesian_point cp=coords.cartesian(rad(sdata.lat),
-                rad(sdata.lon),r0_ellipse(rad(sdata.lat))+sdata.elev);
+      Note this computation assumes lat and lon were converted to radians 
+      on input.  Note we als have to convert elevation to km*/
+    double elevkm=r0_ellipse(sdata.lat)+0.001*sdata.elev;
+    Cartesian_point cp=coords.cartesian(sdata.lat,
+                sdata.lon,elevkm);
     dout.put("ffid",sdata.ffid);
     dout.put("sx",cp.x1);  dout.put("sy",cp.x2);  dout.put("sz",cp.x3);
     dout.put("origin.lat",deg(sdata.lat));
     dout.put("origin.lon",deg(sdata.lon));
     dout.put("origin.elev",sdata.elev);
     dout.put("origin.time",sdata.time);
+    //DEBUG
+    cerr << sdata.ffid<<" "<<cp.x1<<" "<<cp.x2<<" "<<cp.x3<<endl;
     vector<ThreeComponentSeismogram>::iterator dptr;
     for(dptr=full_line.member.begin();dptr!=full_line.member.end();++dptr)
     {
@@ -107,6 +111,10 @@ ThreeComponentEnsemble ExtractWindowedData(ThreeComponentEnsemble& full_line,
       if(!dptr->is_gap(winthis))
       {
         dw=WindowData(*dptr,winthis);
+        /* This makes the timing relative to origin.time.  New api for
+         * basic time series posts that time so that it stays with the 
+         * object */
+        dw.ator(sdata.time);
         /* We intentionally duplicate source coordinates with each seismogram */
         dw.put("sx",cp.x1);  dw.put("sy",cp.x2);  dw.put("sz",cp.x3);
         dw.put("origin.lat",deg(sdata.lat));
@@ -264,6 +272,10 @@ int main(int argc, char **argv)
       assumes the current situation where the hfarray constructor always
       sets the azimuth attribute 0 */
       Geographic_point origin=array.origin();
+      log << "Converting coordinates using local coordinates with origin:"<<endl
+          << "Latitude:  "<<deg(origin.lat)<<" Longitude:  "<<deg(origin.lon)
+          <<" Elevation (km): "<< origin.r - r0_ellipse(origin.lat)
+          <<endl;
       RegionalCoordinates coords(origin.lat,origin.lon,origin.r,0.0);
       /* The first thing we do is eat up the whole input file of source
       data and store it in this vector.   For efficiency we then aim to
