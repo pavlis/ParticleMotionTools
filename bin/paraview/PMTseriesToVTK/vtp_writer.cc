@@ -44,6 +44,13 @@ void WriteEllipses(vector<PMTimeSeries>& d,
         {
             try{
                 i=dptr->sample_number(t);
+                if ( dptr==d.begin() && i < 0 )
+                    {
+                    stringstream ss;
+                    ss << "vtp_writer.cc: line 46: attempted to access negative "
+                    << "array index (" << i << ")" << endl;
+                    throw ss.str();
+                    }
                 ParticleMotionEllipse pme;  // assume initializes to 0;
                 try {
                     pme=dptr->ellipse(i);

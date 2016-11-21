@@ -1,7 +1,7 @@
 BIN=mwpm
 
 cxxflags=-g
-ldflags=-L$(ANTELOPE)/contrib/static
+#ldflags= -L/N/u/rccaton/Karst/ParticleMotionTools/lib/libmwtpp -L$(ANTELOPE)/contrib/static
 ldlibs=-lmwtpp -lseispp -lgclgrid -lmultiwavelet -lgenloc $(DBLIBS) $(TRLIBS) -lperf -lboost_serialization
 SUBDIR=/contrib
 
@@ -9,6 +9,7 @@ include $(ANTELOPEMAKE)
 include $(ANTELOPEMAKELOCAL)
 CXXFLAGS += -I$(BOOSTINCLUDE)
 LDFLAGS += -L$(BOOSTLIB)
+#LDFLAGS += -L/N/u/rccaton/Karst/ParticleMotionTools/lib/libmwtpp
 
 OBJS=mwpm.o
 $(BIN) : $(OBJS)
