@@ -1,7 +1,7 @@
 data_window_start -1.5
 data_window_end 2.0
 read_window_pad_length 0.5
-BRTT_filter_definition "BW 5.0 5 0.0 0"
+BRTT_filter_definition BW 5.0 5 0.0 0
 maximum_read_window_length 36000.0
 StationChannelMap	&Arr{
     default	&Tbl{
