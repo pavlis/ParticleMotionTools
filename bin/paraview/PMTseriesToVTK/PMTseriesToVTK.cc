@@ -3,10 +3,10 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include "PMTimeSeries.h"
 #include "stock.h"
 #include "seispp.h"
 #include "HFArray.h"
-#include "PMTimeSeries.h"
 #include "TimeWindow.h"
 #include "PfStyleMetadata.h"
 #include "AttributeMap.h"
@@ -40,7 +40,6 @@ vector<PMTimeSeries> read_pmdata(string listfile)
                         << "Message posted by boost::archive:  "
                         <<err.what()<<endl;
                 }
-                lfin.close();
                 ifs.close();
             }
             else
@@ -142,7 +141,10 @@ double find_max_amplitude(PMTimeSeries& d)
 {
     int i;
     double maxamp(0.0);
-    for(i=0;i<d.ns;++i)
+    //cout << d.ns << endl;
+    //vector<ParticleMotionEllipse> v;
+    //v = d.get_pmdata();
+    for(i=0;i<d.get_pmdata().size();++i)
     {
         ParticleMotionEllipse e=d.ellipse(i);
         if(e.majornrm>maxamp) maxamp=e.majornrm;
@@ -292,8 +294,7 @@ int main(int argc, char **argv)
             /* In small aperture array mode we override any
                receiver position information with coordinate data
                stored in the HFArray object */
-            for(dptr=d.begin();
-                    dptr!=d.end();++dptr)
+            for(dptr=d.begin();dptr!=d.end();++dptr)
             {
                 try {
                     string sta=dptr->get_string("sta");

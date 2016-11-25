@@ -148,7 +148,7 @@ ParticleMotionEllipse::ParticleMotionEllipse(ComplexTimeSeries& x,
         ComplexTimeSeries yw=WindowData<ComplexTimeSeries>(y,w);
         ComplexTimeSeries zw=WindowData<ComplexTimeSeries>(z,w);
         int ntw=xw.s.size();  // assume all the same length
-        A = (FORTRAN_complex *)calloc(ntw,sizeof(FORTRAN_complex));
+        A = (FORTRAN_complex *)calloc(3*ntw,sizeof(FORTRAN_complex));
         if(A==NULL) throw SeisppError(base_error
                 + "calloc failed for principal component work matrix");
         /* Load A in fortran complex order and call the lapack svd routine*/

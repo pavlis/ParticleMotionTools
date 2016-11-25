@@ -75,7 +75,7 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         averaging_length=avlen;
         f0=d.get_f0(band);
         fw=d.get_fw(band);
-        dt=d.sample_interval(band);
+        //dt=d.sample_interval(band);
         decfac=d.get_decfac(band)*timesteps;
         int iw,i;
         double up[3]={0.0,0.0,1.0};
@@ -92,12 +92,14 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         /* These are required attributes from BasicTimeSeries.  We have
            to assume we can estract them from the components we just
            built. */
+        float dt;
+        dt = x[0].get_dt0();
         ns=x[0].ns;
         tref=x[0].tref;
         t0=x[0].t0;
         live=false;   // Set this way in case we throw an error
         /* This is a sanity check.   Perhaps unnecessary overhead, but
-         cost is not high for stability it can buy*/
+         cost is not high for stability it can buy */
         for(iw=0;iw<nw;++iw)
         {
             if((x[iw].ns!=ns) || (y[iw].ns!=ns) || (z[iw].ns!=ns) )
@@ -133,18 +135,23 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         pmi.reserve(nw);
         //assume x,y, and z have common start times 
         this->t0=x[0].t0+avlen/2.0;  //use centered time as reference
-        this->dt=timesteps;
+        //this->dt=timesteps;
+        //cout << "x[0].endtime() is " << x[0].endtime() << endl;
         double t;  // this is stare time of averaging window not center
         for(i=0,t=x[0].t0;i<ns;++i,t+=timesteps)
         {
             TimeWindow tw(t,t+avlen);
-            for(iw=0;iw<nw;++iw)
-                pmi.push_back(ParticleMotionEllipse(x[iw],
-                            y[iw],z[iw],tw,up));
-            ComputePMStats(pmi,avg,err);
-            pmdata.push_back(avg);
-            pmerr.push_back(err);
-            pmi.clear();
+            //cout << tw.end << endl;
+            if ( tw.end < x[0].endtime() )
+            {
+                for(iw=0;iw<nw;++iw)
+                    pmi.push_back(ParticleMotionEllipse(x[iw],y[iw],z[iw],tw,up));
+                ComputePMStats(pmi,avg,err);
+                pmdata.push_back(avg);
+                pmerr.push_back(err);
+                pmi.clear();
+            }
+            else { break; }
         }
         this->post_attributes_to_metadata();
         live=true;
@@ -240,6 +247,7 @@ PMTimeSeries::PMTimeSeries(const PMTimeSeries& parent)
     averaging_length=parent.averaging_length;
     decfac=parent.decfac;
 }
+
 PMTimeSeries& PMTimeSeries::operator=(const PMTimeSeries& parent)
 {
     if(this!=&parent)
@@ -248,9 +256,24 @@ PMTimeSeries& PMTimeSeries::operator=(const PMTimeSeries& parent)
         fw=parent.fw;
         averaging_length=parent.averaging_length;
         decfac=parent.decfac;
+        this->BasicTimeSeries::operator=(parent);
+        this->Metadata::operator=(parent);
+        this->pmdata=parent.pmdata;
+        this->pmerr=parent.pmerr;
     }
     return *this;
 }
+
+
+vector<ParticleMotionEllipse> PMTimeSeries::get_pmdata() {
+    return(pmdata);
+};
+
+vector<ParticleMotionError> PMTimeSeries::get_pmerr() {
+    return(pmerr);
+};
+
+
 /* Both of the following routines could use the at() method of std::vector
    but I use a custom test to allow me to throw a SeisppError, which is
    consistent with the rest of this code. */

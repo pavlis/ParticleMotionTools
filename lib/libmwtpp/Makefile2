@@ -7,8 +7,7 @@ SUBDIR=/contrib
 include $(ANTELOPEMAKE)
 include $(ANTELOPEMAKELOCAL)
 
-CXXFLAGS += -I$(BOOSTINCLUDE)
-OBJS=	# list all objects to put into the library
+CXXFLAGS += -g -I$(BOOSTINCLUDE)
 OBJS=HFArray.o MWTBundle.o MWTransform.o MWTMatrix.o MWTdata.o MWTwaveform.o \
          ParticleMotionEllipse.o ParticleMotionError.o  PMTimeSeries.o
 MWTBundle.cc : MWTransform.h
