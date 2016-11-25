@@ -67,6 +67,9 @@ int main(int argc, char **argv)
         cout << "Plot completed of "<<nseis<<" seismogram"<<endl
           << "Use the menu or type x in any active window to quit"
           <<endl;
+        /* A not so good feature of this gizmo is we have to put it
+         * in pick mode.*/
+        win.pick();
     }catch(SeisppError& serr)
     {
         serr.log_error();
