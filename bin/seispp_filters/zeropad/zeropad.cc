@@ -1,42 +1,13 @@
-/* This is a template file for building a unix style filter for 
-the seispp library using boost serialization.   The example is
-known to work only for reading a single object from stdin (e.g. the 
-ThreeComponentEnsemble used in this example) and writing a 
-modified version of that object to stdout.  As I understand the
-boost serialization library and C++ streams, however, there is no
-reason this should not work with a stream file of an undefined number
-of the same objects or even different objects arranged in known order.
-
-This example simply copies a serialized ThreeComponentEnsemble from 
-stdin to stdout.   make should build it under the name template. 
-
-See comments below to see how to customize this for a different algorithm.
-You can also look at examples that (at least for now) are in the directory
-one up from where this file is located. 
-
-You should, of course, strip all the template comments when you 
-get your program to work.
-*/
-
-/* This set of system includes are always required.  Do not remove them.*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
 #include <iostream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-/* These are SEISPP includes that are a base requirement 
-   to use this template file */
 #include "seispp.h"
-/* Replace these as needed.  This one is here only to make
-   this do nothing template compile for testing configuration */
 #include "ensemble.h"
-/* You will get lots of errors without these namespace
-   declaration*/
 using namespace std;   // most compilers do not require this
 using namespace SEISPP;  //This is essential to use SEISPP library
-/* worker routine for this program - zero pad plen seconds of data with linear taper
-   of length tlen */
 ThreeComponentSeismogram pad_3cseis(ThreeComponentSeismogram& d,double plen,double tlen)
 {
     int i,j;
@@ -72,6 +43,7 @@ ThreeComponentSeismogram pad_3cseis(ThreeComponentSeismogram& d,double plen,doub
             for(i=0;i<3;++i)
                 upad(i,j+npad)*=wt;
         d.u=upad;
+        d.t0 -= plen;
         return d;
     }catch(...){throw;};
 }
