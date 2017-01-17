@@ -91,13 +91,13 @@ TimeSeries ReadSegyTrace(FILE *fp,bool load_coordinates)
             sy=(double)(tr.sy);
             sy/=scale;
             d.put("sy",sy);
-            d.put("relev",tr.gelev);
+            d.put("relev",(double)tr.gelev);
             /* To mesh with ParticleMotionVTKconverter we have to store the
                sensor elevation in units of km under the site.elev tag.*/
             double elev=(double)tr.gelev;
             elev /= 1000.0;
-            d.put("site.elev",(double)tr.gelev);
-            d.put("selev",tr.selev);
+            d.put("site.elev",elev);
+            d.put("selev",(double)tr.selev);
             /* We save offset in the the original segy int form and compute
                it form the other coordinates.   The later can be more 
                accurate when scalco is greater than one.*/
