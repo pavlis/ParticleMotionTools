@@ -63,17 +63,20 @@ vector<dmatrix> convert_to_matrices(ThreeComponentEnsemble& d)
   for(i=0;i<3;++i) work.push_back(dmatrix(m,n));
   for(i=0;i<3;++i) work[i].zero();
   double t;
-  for(t=tmin,dptr=d.member.begin(),j=0;dptr!=d.member.end();t+=dt,++dptr,++j)
+  for(dptr=d.member.begin(),j=0;dptr!=d.member.end();++dptr,++j)
   {
-    int kd,km;
-    kd=dptr->sample_number(t);
-    if( (kd>=0) && (kd<dptr->ns) )
+    for(t=tmin;t<tmax;t+=dt)
     {
-      if(kd<m)
+      int kd,km;
+      kd=dptr->sample_number(t);
+      if( (kd>=0) && (kd<dptr->ns) )
       {
-        for(i=0;i<3;++i)
+        if(kd<m)
         {
-          work[i](kd,j)=dptr->u(i,kd);
+          for(i=0;i<3;++i)
+          {
+            work[i](kd,j)=dptr->u(i,kd);
+          }
         }
       }
     }
