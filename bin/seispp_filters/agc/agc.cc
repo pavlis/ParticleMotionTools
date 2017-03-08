@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <float.h>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include "seispp.h"
@@ -48,50 +49,164 @@ template <class OutputObject> void write_object(OutputObject& d,
                 +"Do you have write permission for output directory?");
     }
 }
-TimeSeries agc(ThreeComponentSeismogram& d, double twin)
+/* This uses the same algorithm as seismic unix BUT with a vector ssq 
+ * instead of the scalar form.   Returns a gain function a the same sample
+ * rate as teh original data with the gain factor applied to each 3c sample.
+ * The gain is averaged over scale twin ramping on and off using the same
+ * cumulative approach used in seismic unix algorithm. */
+TimeSeries do_agc(ThreeComponentSeismogram& d, double twin)
 {
     try{
+        dmatrix agcdata(3,d.ns);
+        double val,rms,ssq,gain,lastgain;
+        int i,k,iw,iwbreak;
         TimeSeries gf(dynamic_cast<Metadata&>(d),false);
-        gf.dt=twin/2.0;
-        /* This puts the first sample of the gain function center of 
-         * agc window */
         gf.t0=d.t0+gf.dt;
         gf.s.clear();
-        /* Compute number of samples in agc window */
-        int nsw=static_cast<int>((gf.dt)/(d.dt));
-        nsw*=2;  // Assures nsw is devisible by 2 - require for loop below 
-        if(nsw<=0) throw SeisppError("agc funtion:  window length is less than sample interval");
-        double ssq,scale;
-        int i,k,iw;
-        for(iw=0;iw<d.ns;iw+=gf.dt)
+        int nwin,iwagc;
+        nwin=nint(twin/(d.dt));
+        iwagc=nwin/2;
+        if(iwagc<=0) throw SeisppError("do_agc:  illegal time window - resolves to less than one sample");
+        /* this shouldn't happen but avoids a seg fault for a dumb input */
+        if(iwagc>d.ns) iwagc=d.ns;
+        /* First compute sum of squares in initial wondow to establish the
+         * initial scale */
+        for(i=0,ssq=0.0;i<iwagc;++i)
         {
-            for(i=iw;i<iw+nsw;++i)
-                for(k=0;k<3;++k)
-                {
-                    double val=d.u(i,k);
-                    ssq += val*val;
-                }
-            scale=sqrt(ssq)/((double)(3*nsw));
-            gf.s.push_back(scale);
+            for(k=0;k<3;++k)
+            {
+                val=d.u(k,i);
+                ssq+=val*val;
+            }
         }
-        /* Now work through the data sample by sample and apply
-         * the gain function.  We use a linear interpolator between
-         * computed gain values */
-        for(i=0;i<d.ns;++i)
+        int normalization;
+        normalization=3*iwagc;
+        rms=ssq/((double)normalization);
+        if(rms>0.0)
         {
-            //Reuse iw as position in gain function
-            iw=gf.sample_number(d.time(i));
-            /* This assumes sample_number uses nint so the point is between
-             * iw and iw+1*/
-            if(iw<0)
-                scale=gf.s[0];
-            else if(iw>=(d.ns-1))
-                scale=gf.s[gf.ns-1];
+            gain=1.0/sqrt(rms);
+            for(k=0;k<3;++k) 
+            {
+                agcdata(k,0) = gain*d.u(k,0);
+            }
+            gf.s.push_back(gain);
+        }
+        else
+        {
+            gf.s.push_back(0.0);
+            lastgain=0.0;
+        }
+        //DEBUG
+        //cout <<endl<< "i="<<i<<" gain="<<gain<<endl;
+        /* Ramping on */
+        //DEBUG
+        //cout << "Ramping on section"<<endl;
+        for(i=1;i<=iwagc;++i)
+        {
+            for(k=0;k<3;++k)
+            {
+                val=d.u(k,i+iwagc);
+                ssq+=val*val;
+                ++normalization;
+//DEBUG
+//cout << "val="<<val<<" ssq="<<ssq<<"normalization="<<normalization<<endl;
+            }
+            rms=ssq/((double)normalization);
+            if(rms>0.0) 
+            {
+                lastgain=gain;
+                gain=1.0/sqrt(rms);
+            }
             else
-                scale=INTERPOLATOR1D::linear_scalar(d.time(i),
-                        gf.time(iw),gf.s[iw],gf.time(iw+1),gf.s[iw+1]);
-            for(k=0;k<3;++k) d.u(i,k)*=scale;
+            {
+                if(lastgain==0.0)
+                    gain=0.0;
+                else
+                    gain=lastgain;
+
+            }
+            gf.s.push_back(gain);
+            lastgain=gain;
+            for(k=0;k<3;++k) agcdata(k,i) = gain*d.u(k,i);
+        //DEBUG
+        //cout << "i="<<i<<" rms="<<rms<<" gf.s[i]="<<gf.s[i]<<endl;
         }
+        /* mid range - full rms window */
+        //DEBUG
+        //cout << "Mid range section"<<endl;
+        int isave;
+        for(i=iwagc+1,isave=iwagc+1;i<d.ns-iwagc;++i,++isave)
+        {
+           for(k=0;k<3;++k)
+           {
+               val=d.u(k,i+iwagc);
+               ssq+=val*val;
+//DEBUG
+//cout << "Add number at i+iwagc="<<i+iwagc<<endl;
+//cout << "val="<<val<<" ssq="<<ssq<<"normalization="<<normalization<<endl;
+               val=d.u(k,i-iwagc);
+               ssq-=val*val;
+//DEBUG
+//cout << "Subtract number at i-iwagg="<<i-iwagc<<endl;
+//cout << "val="<<val<<" ssq="<<ssq<<"normalization="<<normalization<<endl;
+           }
+           rms=ssq/((double)normalization);
+            if(rms>0.0) 
+            {
+                lastgain=gain;
+                gain=1.0/sqrt(rms);
+            }
+            else
+            {
+                if(lastgain==0.0)
+                    gain=0.0;
+                else
+                    gain=lastgain;
+
+            }
+            gf.s.push_back(gain);
+            lastgain=gain;
+            for(k=0;k<3;++k) agcdata(k,i) = gain*d.u(k,i);
+        //DEBUG
+        //cout << "i="<<i<<" rms="<<rms<<" gf.s[i]="<<gf.s[i]<<endl;
+        }
+        //DEBUG
+        //cout << "Ramping off data"<<endl;
+        /* ramping off */
+        for(i=isave;i<d.ns;++i)
+        {
+            for(k=0;k<3;++k)
+            {
+                val=d.u(k,i-iwagc);
+                ssq -= val*val;
+                --normalization;
+//DEBUG
+//cout << "Subtract number at i="<<i<<endl;
+//cout << "val="<<val<<" ssq="<<ssq<<"normalization="<<normalization<<endl;
+            }
+            rms=ssq/((double)normalization);
+            if(rms>0.0) 
+            {
+                lastgain=gain;
+                gain=1.0/sqrt(rms);
+            }
+            else
+            {
+                if(lastgain==0.0)
+                    gain=0.0;
+                else
+                    gain=lastgain;
+
+            }
+            gf.s.push_back(gain);
+            lastgain=gain;
+            for(k=0;k<3;++k) agcdata(k,i) = gain*d.u(k,i);
+        //DEBUG
+        //cout << "i="<<i<<" rms="<<rms<<" gf.s[i]="<<gf.s[i]<<endl;
+        }
+        d.u=agcdata;
+        gf.live=true;
+        gf.ns=gf.s.size();
         return gf;
     }catch(...){throw;};
 }
@@ -130,8 +245,10 @@ int main(int argc, char **argv)
         int i;
         for(i=0;i<n;++i)
         {
-            TimeSeries g=agc(d.member[i],agcwinlen);
+            TimeSeries g;
+            g=do_agc(d.member[i],agcwinlen);
             gains.member.push_back(g);
+            //cout << g;
         }
         write_object<ThreeComponentEnsemble>(d,oa);
         if(save_gain_function)
