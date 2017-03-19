@@ -31,34 +31,10 @@ TextIOStreamReader::TextIOStreamReader(string fname)
     if(magic_test!=magic_tag) throw SeisppError(base_error + "File "
         + fname + " does not appear to be a valid seispp boost serialization file");
     ifs >> nobjects;
-    ifs.seekg(0,ios_base::beg);
+    this->rewind();
     ar=new boost::archive::text_iarchive(ifs);
   }catch(...){throw;};
 }
-/*
-TextIOStreamReader::TextIOStreamReader(const TextIOStreamReader& parent) : ar(parent.ar)
-{
-  parent_filename=parent.parent_filename;
-  input_is_stdio=parent.input_is_stdio;
-  nobjects=parent.nobjects;
-  n_previously_read=parent.n_previously_read;
-  ifs=parent.ifs;
-  ar=parent.ar;
-}
-TextIOStreamReader& TextIOStreamReader::operator=(const TextIOStreamReader& parent)
-{
-  if(this!=&parent)
-  {
-    parent_filename=parent.parent_filename;
-    input_is_stdio=parent.input_is_stdio;
-    nobjects=parent.nobjects;
-    n_previously_read=parent.n_previously_read;
-    ifs=parent.ifs;
-    ar=parent.ar;
-  }
-  return *this;
-}
-*/
 TextIOStreamReader::~TextIOStreamReader()
 {
   delete ar;
@@ -81,11 +57,6 @@ template <class InputObject> InputObject TextIOStreamReader::read()
       + "boost text serialization read failed\nCheck that input is a valid boost text serialization file");
   }
 }
-void TextIOStreamReader::set_method(string name)
-{
-  /* This does nothing.  Purely a place holder to link to base until I
-  discover something more appropriate.*/
-}
 bool TextIOStreamReader::good()
 {
   if(n_previously_read<(nobjects-1))
@@ -99,6 +70,10 @@ bool TextIOStreamReader::eof()
     return true;
   else
     return false;
+}
+void TextIOStreamReader::rewind()
+{
+  ifs.seekg(0,ios_base::beg);
 }
 TextIOStreamWriter::TextIOStreamWriter()
 {

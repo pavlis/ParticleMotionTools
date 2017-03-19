@@ -2,20 +2,47 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
-class GenericObjectIO
+/*! \brief Abstract base class for generic object reader.
+
+This is the base class for a collection of C++ classes designed to
+abstract and simplify the process of reading and writing of seispp data
+objects.   The purpose of this base class is to provide the foundation for
+a set of polymorphic objects for reading data in various generic forms.
+*/
+class BasicObjectReader
 {
   public:
     /*! Pure virtual method used to allow an abstract base class.*/
-    virtual void set_method(string name)=0;
+    virtual bool good()=0;
+    virtual long number_available();
 };
-/* We write the number of objects in set of concatenated serial objects
+/*! \brief Abstract base class for generic object writer.
+
+This is the base class for a collection of C++ classes designed to
+abstract and simplify the process of reading and writing of seispp data
+objects.   The purpose of this base class is to provide the foundation for
+a set of polymorphic objects for saving data in varous forms.
+*/
+class BasicObjectWriter
+{
+  public:
+    virtual long number_already_written();
+};
+/*! We write the number of objects in set of concatenated serial objects
    at the end of the file.  We seek back this many bytes to read the
    number of objects written */
 const int TextIOStreamEOFOffset(64);
-/* This string is written to the very end of the file and tested on input to
+/*! This string is written to the very end of the file and tested on input to
 validate file integrity.*/
 const string magic_tag("SEISPP_FIlE_IS_VALID");
-class TextIOStreamReader : GenericObjectIO
+/*! \brief Generic object reader to read serialized test data from a sequential file.
+
+This object abstracts reading of objects based on two standard concepts:
+(1) access is sequential as in reading from a tape, and (2) data are
+serialized and written as ascii text.   The implementation uses the
+boost text archive library, but the design of the interface is intended to
+insulate the application from this implementation detail. */
+class TextIOStreamReader : BasicObjectReader
 {
   public:
     /*! \brief Default constructor.
@@ -38,9 +65,16 @@ class TextIOStreamReader : GenericObjectIO
      /*! Standard assignment operator. Appears impossible for boost serialization*/
     //TextIOStreamReader& operator=(const TextIOStreamReader& parent);
     template <class T> T read();
-    void set_method(string name);
-    long number_objects(){return nobjects;};
-    long number_objects_already_read(){return n_previously_read;};
+    /*! Returns number of objects in the file being read. */
+    long number_available(){return nobjects;};
+    /*! \brief Return the number of objects already read.
+
+    In loops going through a sequential file it can be useful to know the
+    position.   This effectively returns a count of position as an integer
+    of how many objects are read.   Since most objects are not a fixed size
+    this is not directly linked to file position.  It is of use in a loop
+    of for information on how a job is progressing. */
+    long number_already_read(){return n_previously_read;};
     /*! \brief Test if ok to read more.
 
     This method can be used to drive a while loop.  Returns true as long
@@ -48,6 +82,11 @@ class TextIOStreamReader : GenericObjectIO
     bool good();
     /*! Test for end of file condition.  */
     bool eof();
+    /*! \brief position to beginning of file.
+
+    Since a serial file is basd on the concept of sequential access it is
+    useful to have the concept of rewind as in a tape. */
+    void rewind();
   private:
     boost::archive::text_iarchive *ar;
     /* input from stdio is special and is flagged by this boolean */
@@ -62,7 +101,14 @@ class TextIOStreamReader : GenericObjectIO
     long nobjects;
     long n_previously_read;
 };
-class TextIOStreamWriter : GenericObjectIO
+/*! \brief Generic object writer saving data in a sequential text file.
+
+This object abstracts reading of objects based on two standard concepts:
+(1) access is sequential as in reading from a tape, and (2) data are
+serialized and written as ascii text.   The implementation uses the
+boost text archive library, but the design of the interface is intended to
+insulate the application from this implementation detail. */
+class TextIOStreamWriter : BasicObjectWriter
 {
   public:
     /*! \brief Default constructor.
@@ -88,7 +134,7 @@ class TextIOStreamWriter : GenericObjectIO
     \param d - object to be written
     */
     template <class T> void write(T& d);
-    long number_objects_already_written(){return nobjects;};
+    long number_already_written(){return nobjects;};
   private:
     boost::archive::text_oarchive *ar;
     /* input from stdio is special and is flagged by this boolean */
@@ -102,6 +148,10 @@ class TextIOStreamWriter : GenericObjectIO
        the end of the file.   It is incremted by each write. */
     long nobjects;
 };
+/***** Should be able to add: (1) read/write binary sequential, (2) read/write
+xml sequential, (3) forms of indexed files with keys generated seperately, and
+(4) database access through a nonsql db */
+
 /*! Legacy writer for archive connected to stdout - original seispp_filters */
 template <class OutputObject> void write_object(OutputObject& d,
         boost::archive::text_oarchive& oa)
