@@ -6,6 +6,8 @@
 using namespace std;
 TextIOStreamReader::TextIOStreamReader()
 {
+  /* Note when this constructor is called ifs is not initialized and must
+  not be touched. */
   input_is_stdio=true;
   /* Only one object is allowed for stdin*/
   nobjects=1;
@@ -28,7 +30,7 @@ TextIOStreamReader::TextIOStreamReader(string fname)
     ifs.seekg(ifs.end-TextIOStreamEOFOffset);
     string magic_test;
     ifs >> magic_test;
-    if(magic_test!=magic_tag) throw SeisppError(base_error + "File "
+    if(magic_test!=eof_tag) throw SeisppError(base_error + "File "
         + fname + " does not appear to be a valid seispp boost serialization file");
     ifs >> nobjects;
     this->rewind();
@@ -45,11 +47,30 @@ template <class InputObject> InputObject TextIOStreamReader::read()
   const string base_error("TextIOStreamReader read method:  ");
   InputObject d;
   try{
-
-    if(n_previously_read>=(nobjects-1)) throw SeisppError(base_error
+    /* This little test is probably an unnecessary overhead, but the cost is
+    tiny */
+    if(!input_is_stdio)
+      if(n_previously_read>=(nobjects-1)) throw SeisppError(base_error
         + "Trying to read past end of file - code should test for this condition with at_eof method");
     (*ar)>>d;
     ++n_previously_read;
+    string tag;
+    if(input_is_stdio)
+      cin>>tag;
+    else
+      ifs>>tag;
+    if(tag==more_data_tag)
+      more_data_available=true;
+    else if(tag==eof_tag)
+      more_data_available=false;
+    else
+    {
+      more_data_available=false;
+      cerr << "TextIOStreamReader read method (WARNING): invalid end of data tag="
+        << tag<<endl
+        << "Read may be truncated"<<endl
+        << "Number of objects read so far="<<n_previously_read<<endl;
+    }
     return d;
   }catch(...)
   {
@@ -57,29 +78,44 @@ template <class InputObject> InputObject TextIOStreamReader::read()
       + "boost text serialization read failed\nCheck that input is a valid boost text serialization file");
   }
 }
-bool TextIOStreamReader::good()
-{
-  if(n_previously_read<(nobjects-1))
-    return true;
-  else
-    return true;
-}
 bool TextIOStreamReader::eof()
 {
-  if(n_previously_read>=nobjects)
-    return true;
+  if(input_is_stdio)
+  {
+    if(more_data_available)
+      return false;
+    else
+      return true;
+  }
   else
-    return false;
+  {
+    /* We could use the same test as for stdin, but is a good integrity test.
+    Makes the reader less robust, but more reliable in retrieving valid data*/
+    if(n_previously_read>=nobjects)
+      return true;
+    else
+      return false;
+  }
 }
 void TextIOStreamReader::rewind()
 {
-  ifs.seekg(0,ios_base::beg);
+  if(input_is_stdio)
+  {
+    throw SeisppError(string("TextIOStreamReader rewind method:  ")
+      + "input is tied to stdin - rewind is not possible for stdin");
+  }
+  else
+    ifs.seekg(0,ios_base::beg);
 }
 TextIOStreamWriter::TextIOStreamWriter()
 {
+  /* Note ofs is left invalid in this condition - stdin cannot seek
+  which creates a disconnect */
   output_is_stdio=true;
   nobjects=0;
   parent_filename="STDIN";
+  /* This may not be necessary according to the documentation */
+  ios::sync_with_stdio();
   ar=new boost::archive::text_oarchive(std::cout);
 }
 TextIOStreamWriter::TextIOStreamWriter(string fname)
@@ -94,23 +130,37 @@ TextIOStreamWriter::TextIOStreamWriter(string fname)
     parent_filename=fname;
     output_is_stdio=false;
     nobjects=0;
+    ios::sync_with_stdio();
     ar=new boost::archive::text_oarchive(ofs);
   }catch(...){throw;};
 }
 TextIOStreamWriter::~TextIOStreamWriter()
 {
   char *buf=new char [TextIOStreamEOFOffset];
-  sprintf(buf,"%s %ld",magic_tag.c_str(),nobjects);
+  sprintf(buf,"%s %ld\n",eof_tag.c_str(),nobjects);
   int i;
-  for(i=0;i<TextIOStreamEOFOffset;++i) ofs<<buf[i];
+  for(i=0;i<TextIOStreamEOFOffset;++i)
+  {
+    if(output_is_stdio)
+      cout<<buf[i];
+    else
+      ofs<<buf[i];
+  }
   ofs.close();
   delete ar;
 }
 template <class OutputObject> void TextIOStreamWriter::write(OutputObject& d)
 {
     try {
-        (*ar) << d;
-        ++nobjects;
+      if(nobjects>0)
+      {
+        if(output_is_stdio)
+          cout<<more_data_tag<<endl;
+        else
+          ofs<<more_data_tag<<endl;
+      }
+      (*ar) << d;
+      ++nobjects;
     }catch(...)
     {
         throw SeisppError(string("TextIOStreamWriter write method failed\n")

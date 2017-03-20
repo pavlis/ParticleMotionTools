@@ -32,9 +32,11 @@ class BasicObjectWriter
    at the end of the file.  We seek back this many bytes to read the
    number of objects written */
 const int TextIOStreamEOFOffset(64);
-/*! This string is written to the very end of the file and tested on input to
-validate file integrity.*/
-const string magic_tag("SEISPP_FIlE_IS_VALID");
+/*! This string is written after each object when more data follows..*/
+const string more_data_tag("MORE_DATA_FOLLOW");
+/*! This is written at the end of the file immediately before text conversion
+of nobject count */
+const string eof_tag("END_OF_FILE");
 /*! \brief Generic object reader to read serialized test data from a sequential file.
 
 This object abstracts reading of objects based on two standard concepts:
@@ -79,7 +81,7 @@ class TextIOStreamReader : BasicObjectReader
 
     This method can be used to drive a while loop.  Returns true as long
     as the count of object read is less than the number in the file */
-    bool good();
+    bool good(){return more_data_available;};
     /*! Test for end of file condition.  */
     bool eof();
     /*! \brief position to beginning of file.
@@ -100,6 +102,10 @@ class TextIOStreamReader : BasicObjectReader
        read */
     long nobjects;
     long n_previously_read;
+    /* When reading from stdin this boolean is set based on the
+    tag string written at the end of each object.  Set true as long
+    as the tag is not the eof_tag. */
+    bool more_data_available;
 };
 /*! \brief Generic object writer saving data in a sequential text file.
 
