@@ -1,0 +1,4 @@
+Source code in this repository has been depricated.  April 2017 moved
+all these programs to antelope contrib and converted them to a more
+generic io method in the new antelope library seispp_io.
+glp 4/7/2017
