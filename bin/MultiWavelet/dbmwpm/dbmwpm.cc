@@ -71,7 +71,7 @@ void build_working_view(DatascopeHandle& dbh, string subset_string)
 }
 void usage()
 {
-    cerr << "mwpm db [-s subset -pf pffile]"<<endl
+    cerr << "dbmwpm db [-s subset -pf pffile]"<<endl
         << "db is assumed to contain 3c data output of extract_event program"
         <<endl
         << "Use -s to subset working view"<<endl;;
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     int i,j;
     string dbname(argv[1]);
     string sstr("none");
-    string pffile("mwpm.pf");
+    string pffile("dbmwpm.pf");
     for(i=2;i<argc;++i)
     {
         string sarg(argv[i]);
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
         /* This acts like a subroutine and alters dbh to 
            become the handle to the working view */
         build_working_view(dbh,sstr);
-        cout << "mwpm:  processing begins on database "<<dbname;
+        cout << "dbmwpm:  processing begins on database "<<dbname;
         if(sstr=="none")
             cout <<endl;
         else
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                cerr << "WARNING (mwpm):   data for station "
+                cerr << "WARNING (dbmwpm):   data for station "
                     << d->get_string("sta")
                     << " has sample interval="<<d->dt 
                     <<" inconsistent with required dt="<<target_dt
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
             }
             }catch(SeisppError& serr)
             {
-                cerr << "Warning(mwpm):  data skipped for tuple "
+                cerr << "Warning(dbmwpm):  data skipped for tuple "
                     << i << " of input view"<<endl
                     <<" when the following error was thrown"<<endl;
                 serr.log_error();
