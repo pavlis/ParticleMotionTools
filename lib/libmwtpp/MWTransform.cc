@@ -87,7 +87,7 @@ MWTMatrix MWTransform::transform(TimeSeries& d)
         throw;
     }
 }
-vector<Complex> MWTransform::basis(int n)
+vector<SEISPP::Complex> MWTransform::basis(int n)
 {
     if(n<0 || n>nbasis)
     {
@@ -98,14 +98,14 @@ vector<Complex> MWTransform::basis(int n)
             << "Number of basis functions in this set="<<nbasis<<endl;
         throw SeisppError(ss.str());
     }
-    vector<Complex> result;
+    vector<SEISPP::Complex> result;
     int nz;
     nz=basis_functions[n].n;
     result.reserve(nz);
     int i;
     for(i=0;i<nz;++i)
     {
-        Complex val(basis_functions[n].r[i],basis_functions[n].i[i]);
+        SEISPP::Complex val(basis_functions[n].r[i],basis_functions[n].i[i]);
         result.push_back(val);
     }
     return(result);
