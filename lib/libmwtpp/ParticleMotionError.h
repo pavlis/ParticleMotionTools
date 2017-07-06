@@ -1,3 +1,5 @@
+#ifndef _ParticleMotionError_h_ 
+#define _ParticleMotionError_h_
 #include <iostream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -69,3 +71,4 @@ private:
         ar & ndgf_minor_amp;;
     };
 };
+#endif
