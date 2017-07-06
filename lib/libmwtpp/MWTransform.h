@@ -196,7 +196,7 @@ public:
 
     \param n is the wavelet number to be retrieved. 
     */
-    vector<Complex> basis(int n);
+    vector<SEISPP::Complex> basis(int n);
     /*! Assignment operator - will only throw an error.
 
       I have not implemented an assignment operator because the underlying
@@ -269,7 +269,7 @@ public:
         is requested. 
       \param i is the time index. 
       */
-    Complex operator()(int nb, int nw, int member, int iz);
+    SEISPP::Complex operator()(int nb, int nw, int member, int iz);
 private:
     /* This is a 3 vector of outputs of the transform method
        applied to x,y,z components of 3c data. */

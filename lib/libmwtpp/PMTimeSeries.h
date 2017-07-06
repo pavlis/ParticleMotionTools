@@ -3,7 +3,6 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-#include "ComplexTimeSeries.h"
 #include "MWTransform.h"
 #include "ParticleMotionEllipse.h"
 #include "ParticleMotionError.h"

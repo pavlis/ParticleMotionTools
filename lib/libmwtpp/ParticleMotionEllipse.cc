@@ -65,8 +65,8 @@ Written:  October 1999
 
 Revision to C++ class constructor by pavlis, May 2015
 */
-ParticleMotionEllipse::ParticleMotionEllipse(Complex x, Complex y,
-        Complex z, double up[3])
+ParticleMotionEllipse::ParticleMotionEllipse(SEISPP::Complex x, SEISPP::Complex y,
+        SEISPP::Complex z, double up[3])
 {
 	double rx,ry,rz,thetax,thetay,thetaz;  /* polar forms of x,y,z*/
 	double a,b;
@@ -174,10 +174,10 @@ ParticleMotionEllipse::ParticleMotionEllipse(ComplexTimeSeries& x,
            with the singular vector linked to the largest singular
            value.  We scale the complex numbers by the singular
            value to get the amplitude */
-        Complex xz,yz,zz;
-        xz=Complex(A[0].r,A[0].i);
-        yz=Complex(A[1].r,A[1].i);
-        zz=Complex(A[2].r,A[2].i);
+        SEISPP::Complex xz,yz,zz;
+        xz=SEISPP::Complex(A[0].r,A[0].i);
+        yz=SEISPP::Complex(A[1].r,A[1].i);
+        zz=SEISPP::Complex(A[2].r,A[2].i);
         /* This is very inefficient, but a simple way to build the 
            ellipse from the singular vector */
         ParticleMotionEllipse pmtmp(xz,yz,zz,up);

@@ -20,7 +20,7 @@ MWTwaveform::MWTwaveform(MWtrace& mw) : ComplexTimeSeries(mw.nz)
     {
         float re=mw.z[i].r;
         float im=mw.z[i].i;
-        Complex zcomp((double)re,(double)im);
+        SEISPP::Complex zcomp((double)re,(double)im);
 	/* We use the indexing operator instead of push because
 	the ComplexTimeSeries constructor initializes an initial
 	vector of length ns to zeros */

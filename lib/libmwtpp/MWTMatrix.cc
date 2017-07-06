@@ -46,7 +46,7 @@ vector<double> MWTMatrix::real(int band, int nw)
     result.reserve(work.ns);
     for(int i=0;i<work.ns;++i)
     {
-        Complex val;
+        SEISPP::Complex val;
         val=work.s[i];
         result.push_back(val.real());
     }
@@ -63,7 +63,7 @@ vector<double> MWTMatrix::imag(int band, int nw)
     result.reserve(work.ns);
     for(int i=0;i<work.ns;++i)
     {
-        Complex val;
+        SEISPP::Complex val;
         val=work.s[i];
         result.push_back(val.imag());
     }

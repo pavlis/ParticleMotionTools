@@ -173,7 +173,7 @@ MWTwaveform MWTBundle::operator()(int b, int w, int m)
         return mwtm(b,w);
     }catch(...){throw;};
 }
-Complex MWTBundle::operator()(int b, int w, int m, int iz)
+SEISPP::Complex MWTBundle::operator()(int b, int w, int m, int iz)
 {
     /* Not the most efficient way to implement this as this
        requires making a copy of a MWTwaveform, but this 

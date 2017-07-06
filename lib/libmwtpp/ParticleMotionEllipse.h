@@ -70,7 +70,7 @@ public:
        maximum and minimum axes.  We resolve the ambituity by using the 
        direction where the dot product with the up vector is positive.  
        */
-    ParticleMotionEllipse(Complex x,Complex y,Complex z,double up[3]);
+    ParticleMotionEllipse(SEISPP::Complex x,SEISPP::Complex y,SEISPP::Complex z,double up[3]);
     /*! \brief Construct from major and minor axis vectors.
 
       A particle motion ellipse is uniquely defined by its pricipal 
