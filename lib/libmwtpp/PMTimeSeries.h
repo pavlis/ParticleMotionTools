@@ -6,6 +6,16 @@
 #include "MWTransform.h"
 #include "ParticleMotionEllipse.h"
 #include "ParticleMotionError.h"
+/*! \brief Time series style representation of particle motion ellipse data.
+ *
+ The multiwavelet transform can be used to produce particle motion estimates
+ as a function of time.   This object encapsulates that concept as an 
+ abstraction of a TimeSeries object wherein the data points at each 
+ time step are themselves objects = ParticleMotionEllipse implementation.
+ */
+/*! Metadata key that tags TimeSeries scalar metrics returned by
+ * several methods in this object */
+const string PMDerivedTSType("DerivedTSDataType");
 class PMTimeSeries : public BasicTimeSeries, public Metadata
 {
     public:
@@ -77,8 +87,93 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         ParticleMotionError errors(int i);
 
 
+        /*! Get the raw vector of particle motion data defined as ellipses.*/
         vector<ParticleMotionEllipse> get_pmdata();
+        /*! Ge the raw vector of error estimates for the ellipses. */
         vector<ParticleMotionError> get_pmerr();
+        /*! \brief Get representation of major axis length as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          This method retrieves the L2 norm length of the major axis of 
+          the particle motion ellipse at each time step.
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries major_axis_amplitude();
+        /*! \brief Get representation of minor axis length as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          the particle motion ellipse at each time step.
+          The Metadata attributes of the original PMTimeSeries are
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries minor_axis_amplitude();
+        /*! \brief Get representation of rectilinearity as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          This method retrieves the metric called rectilinearity.   
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries rectilinearity();
+        /*! \brief Get representation of major azimuth as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          This method retrieves the major axis direction as function of
+          time (in radians). 
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries major_azimuth();
+        /*! \brief Get representation of major axis inclination  as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          This method retrieves the major axis direction as function of
+          time (in radians). 
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries major_inclination();
+        /*! \brief Get representation of minor azimuth as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          This method retrieves the minor axis direction as function of
+          time (in radians). 
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries minor_azimuth();
+        /*! \brief Get representation of minor axis inclination  as a time series.
+
+          A PMTimeSeries is used to save a full representation of 
+          particle motion estimates as a function of time.  Various
+          scalar metrics can be computed from particle motions 
+          represented as an ellipse.   
+          This method retrieves the minor axis direction as function of
+          time (in radians). 
+          The Metadata attributes of the original PMTimeSeries are
+          copied to the TimeSeries that is returned.  
+          */
+        TimeSeries minor_inclination();
 
 
         /*! Zero any data defined by a gap. 
