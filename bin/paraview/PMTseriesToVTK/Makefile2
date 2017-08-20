@@ -1,4 +1,4 @@
-BIN=PMTseriesToVTK
+BIN=PMTimeSeriesToVTK
 
 #cxxflags=-g -I/N/u/rccaton/Karst/ParticleMotionTools/lib/libmwtpp
 #ldflags= -L/N/u/rccaton/Karst/ParticleMotionTools/lib/libmwtpp -L$(ANTELOPE)/contrib/static
@@ -11,7 +11,7 @@ CXXFLAGS += -I$(BOOSTINCLUDE)
 LDFLAGS += -L$(BOOSTLIB)
 #LDFLAGS += -L/N/u/rccaton/Karst/ParticleMotionTools/lib/libmwtpp
 
-OBJS=PMTseriesToVTK.o vtp_writer.o
+OBJS=PMTimeSeriesToVTK.o vtp_writer.o
 $(BIN) : $(OBJS)
 	$(RM) $@
 	$(CXX) $(CCFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
