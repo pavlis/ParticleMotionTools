@@ -408,6 +408,186 @@ void PMTimeSeries::zero_gaps()
                 }
     	}
 }
+/* This is a series of methods to retrieve simplified representations of
+ * the particle motion data as a function of time as time series 
+ * objects.  In all cases the metadata is a copy of "this".   
+ * This series of method are painfully paraellel.   There is probably
+ * a way to have made this a template, but because the template 
+ * variable is a method name I wasn't sure how to do that.*/
+TimeSeries PMTimeSeries::rectilinearity()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"rectilinearity");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.rectilinearity());
+        }
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
+TimeSeries PMTimeSeries::major_axis_amplitude()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"major_axis_amplitude");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.majornrm);
+        }
+
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
+TimeSeries PMTimeSeries::minor_axis_amplitude()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"minor_axis_amplitude");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.minornrm);
+        }
+
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
+TimeSeries PMTimeSeries::major_azimuth()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"major_azimuth");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.major_azimuth());
+        }
+
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
+TimeSeries PMTimeSeries::major_inclination()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"major_inclination");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.major_inclination());
+        }
+
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
+TimeSeries PMTimeSeries::minor_azimuth()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"minor_azimuth");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.minor_azimuth());
+        }
+
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
+TimeSeries PMTimeSeries::minor_inclination()
+{
+    try{
+        TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        /* set this so we can have a clue what this object is. 
+         * PMDerivedTSType is defined in PMTimeSeries.h */
+        dts.put(PMDerivedTSType,"minor_inclination");
+        /* The following would normally be useful but the TimeSeries
+         * constuctor does this so we drop it.  Left here in case 
+         * that changes. 
+        dts.reserve(this->ns);  
+        */
+        int i,k;
+        for(i=0;i<(this->ns);++i)
+        {
+            ParticleMotionEllipse pmd=this->ellipse(i);
+            dts.s.push_back(pmd.minor_inclination());
+        }
+
+        /* before returning be sure this is set true.   Original constructor
+         * does not set this flag*/
+        dts.live=true;
+        return dts;
+    }catch(...){throw;};
+}
 ostream& operator<<(ostream& os, PMTimeSeries& d)
 {
     os << dynamic_cast<Metadata&>(d)<<endl;
