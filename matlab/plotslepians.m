@@ -14,16 +14,20 @@ for i=1:nw
 end
 for i=1:nw
     S=fft(re(:,i));
-    plot(abs(S(1:npts/2)));
+    semilogy(abs(S(1:npts/2)));
     if (i == 1) 
         hold;
     end
 end
 figure;
+Ssum=zeros(npts,1);
 for i=1:nw
     S=fft(im(:,i));
-    plot(abs(S(1:npts/2)));
+    semilogy(abs(S(1:npts/2)));
     if (i == 1)
         hold;
     end
+    Ssum=Ssum+abs(S);
 end
+figure;
+semilogy(Ssum);
