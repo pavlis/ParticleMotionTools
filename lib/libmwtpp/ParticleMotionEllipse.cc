@@ -178,6 +178,9 @@ ParticleMotionEllipse::ParticleMotionEllipse(ComplexTimeSeries& x,
         xz=SEISPP::Complex(A[0].r,A[0].i);
         yz=SEISPP::Complex(A[1].r,A[1].i);
         zz=SEISPP::Complex(A[2].r,A[2].i);
+        xz*=svalues[0];
+        yz*=svalues[0];
+        zz*=svalues[0];
         /* This is very inefficient, but a simple way to build the 
            ellipse from the singular vector */
         ParticleMotionEllipse pmtmp(xz,yz,zz,up);
@@ -221,7 +224,7 @@ ParticleMotionEllipse& ParticleMotionEllipse::operator=(
 }
 double ParticleMotionEllipse::rectilinearity()
 {
-    if((minornrm>FLT_EPSILON) && (majornrm>FLT_EPSILON) )
+    if(majornrm>FLT_EPSILON) 
         return(1.0 - minornrm/majornrm);
     else
         return(0.0);
