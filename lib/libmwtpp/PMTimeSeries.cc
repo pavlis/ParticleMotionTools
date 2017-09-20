@@ -92,17 +92,20 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         /* These are required attributes from BasicTimeSeries.  We have
            to assume we can estract them from the components we just
            built. */
-        float dt;
-        dt = x[0].get_dt0();
-        ns=x[0].ns;
-        tref=x[0].tref;
-        t0=x[0].t0;
-        live=false;   // Set this way in case we throw an error
+        double dtparent;
+        dtparent = x[0].get_dt0();
+        this->dt=(double)dtparent*((double)decfac);;
+        this->ns=(x[0].ns)/decfac;
+        this->tref=x[0].tref;
+        this->t0=x[0].t0;
+        this->live=false;   // Set this way in case we throw an error
+        /* These floats are in units of s - derived from steps in samples */
+        double time_avlen=(dtparent)*((double)(avlen));
         /* This is a sanity check.   Perhaps unnecessary overhead, but
          cost is not high for stability it can buy */
         for(iw=0;iw<nw;++iw)
         {
-            if((x[iw].ns!=ns) || (y[iw].ns!=ns) || (z[iw].ns!=ns) )
+            if((x[iw].ns!=y[iw].ns) || (y[iw].ns!=z[iw].ns))
             {
                 stringstream ss;
                 ss << "Size mismatch in ComplexTimeSeries components for wavelet="
@@ -134,13 +137,13 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         ParticleMotionError err;
         pmi.reserve(nw);
         //assume x,y, and z have common start times 
-        this->t0=x[0].t0+avlen/2.0;  //use centered time as reference
+        this->t0=x[0].t0+time_avlen/2.0;  //use centered time as reference
         //this->dt=timesteps;
         //cout << "x[0].endtime() is " << x[0].endtime() << endl;
         double t;  // this is stare time of averaging window not center
-        for(i=0,t=x[0].t0;i<ns;++i,t+=timesteps)
+        for(i=0,t=(this->t0);i<ns;++i,t+=(this->dt))
         {
-            TimeWindow tw(t,t+avlen);
+            TimeWindow tw(t,t+time_avlen);
             //cout << tw.end << endl;
             if ( tw.end < x[0].endtime() )
             {
@@ -153,6 +156,10 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
             }
             else { break; }
         }
+        /* Reset ns if necessary.   Do this silently unless ns is 0 or less */
+        if(pmdata.size()<=0) throw SeisppError(base_error
+                + "Data window is too short for specified parameters - zero length PMTimeSeries result");
+        if((this->ns) != pmdata.size()) this->ns = pmdata.size();
         this->post_attributes_to_metadata();
         live=true;
     }catch(...){throw;};
@@ -418,6 +425,7 @@ TimeSeries PMTimeSeries::rectilinearity()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"rectilinearity");
@@ -442,6 +450,7 @@ TimeSeries PMTimeSeries::major_axis_amplitude()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"major_axis_amplitude");
@@ -467,6 +476,7 @@ TimeSeries PMTimeSeries::minor_axis_amplitude()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"minor_axis_amplitude");
@@ -492,6 +502,7 @@ TimeSeries PMTimeSeries::major_azimuth()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"major_azimuth");
@@ -517,6 +528,7 @@ TimeSeries PMTimeSeries::major_inclination()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"major_inclination");
@@ -542,6 +554,7 @@ TimeSeries PMTimeSeries::minor_azimuth()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"minor_azimuth");
@@ -567,6 +580,7 @@ TimeSeries PMTimeSeries::minor_inclination()
 {
     try{
         TimeSeries dts(dynamic_cast<Metadata&>(*this),false);
+        dts.BasicTimeSeries::operator=(dynamic_cast<BasicTimeSeries&>(*this));
         /* set this so we can have a clue what this object is. 
          * PMDerivedTSType is defined in PMTimeSeries.h */
         dts.put(PMDerivedTSType,"minor_inclination");
