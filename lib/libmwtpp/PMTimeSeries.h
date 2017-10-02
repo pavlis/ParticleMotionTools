@@ -4,8 +4,11 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include "MWTransform.h"
+#include "BasicTimeSeries.h"
+#include "Metadata.h"
 #include "ParticleMotionEllipse.h"
 #include "ParticleMotionError.h"
+using namespace SEISPP;
 /*! \brief Time series style representation of particle motion ellipse data.
  *
  The multiwavelet transform can be used to produce particle motion estimates
