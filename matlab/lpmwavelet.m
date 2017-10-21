@@ -33,6 +33,6 @@ lambda=zeros(N,1);
 for i=1:N
     ii=M-i+1;
     w(:,i)=u(:,ii);
-    lambda(i)=d(ii,ii)
+    lambda(i)=d(ii,ii);
 end
 
