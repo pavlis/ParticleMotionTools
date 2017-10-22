@@ -1,15 +1,19 @@
 LIB=libmwtpp.a
-INCLUDE=MWTransform.h PMTimeSeries.h ParticleMotionEllipse.h ParticleMotionError.h
+INCLUDE=MWTransform.h \
+        PMTimeSeries.h \
+        ParticleMotionEllipse.h \
+        ParticleMotionError.h \
+        Vector3DBootstrapError.h
 LICENSES=LICENSE_libmwtpp
 SUBDIR=/contrib
-
 
 include $(ANTELOPEMAKE)
 include $(ANTELOPEMAKELOCAL)
 
 CXXFLAGS += -g -I$(BOOSTINCLUDE)
 OBJS=MWTBundle.o MWTransform.o MWTMatrix.o MWTdata.o MWTwaveform.o \
-         ParticleMotionEllipse.o ParticleMotionError.o  PMTimeSeries.o
+         ParticleMotionEllipse.o ParticleMotionError.o  PMTimeSeries.o \
+         Vector3DBootstrapError.o random_array_index.o
 MWTBundle.cc : MWTransform.h
 MWTMatrix.cc : MWTransform.h 
 MWTdata.cc : MWTransform.h
