@@ -30,14 +30,17 @@ vector<double> dbamp(vector<double>& x)
   for(xptr=x.begin();xptr!=x.end();++xptr)
   {
     double valdb;
-    if((*xptr)<0.0)
+    if((*xptr)<=0.0)
     {
       if(fabs(*xptr)<FLT_EPSILON)
         valdb=20.0*log10(FLT_EPSILON);
       else
         throw SeisppError(string("dbamp procedure: negative values in put array are nonsense"));
     }
-    valdb=20.0*log10(*xptr);
+    else
+    {
+      valdb=20.0*log10(*xptr);
+    }
     result.push_back(valdb);
   }
   return result;
