@@ -74,8 +74,8 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     minor_amps.reserve(nd);
     rect.reserve(nd);
     /* These two hold normalized major and minor axis vectors */
-    dmatrix major(3,nd);
-    dmatrix minor(3,nd);
+    dmatrix dmajor(3,nd);
+    dmatrix dminor(3,nd);
     for(i=0;i<nd;++i)
     {
       /* We assume the vectors passed are already normalized to be
@@ -83,8 +83,8 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
       vectors */
         for(j=0;j<3;++j)
         {
-            major(j,i)=d[i].major[j];
-            minor(j,i)=d[i].minor[j];
+            dmajor(j,i)=d[i].major[j];
+            dminor(j,i)=d[i].minor[j];
         }
         major_amps.push_back(d[i].majornrm);
         minor_amps.push_back(d[i].minornrm);
@@ -107,8 +107,8 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     rectstats=bootstrap_mv(rect,confidence_level,number_of_trials);
     //avg.rectilinearity=rectstats.first;
     err.delta_rect=rectstats.second;
-    Vector3DBootstrapError majboot(major,confidence_level,number_of_trials);
-    Vector3DBootstrapError minboot(minor,confidence_level,number_of_trials);
+    Vector3DBootstrapError majboot(dmajor,confidence_level,number_of_trials);
+    Vector3DBootstrapError minboot(dminor,confidence_level,number_of_trials);
     /* For major we just copy the bootstrap mean */
     vector<double> vmed;
     vmed=majboot.mean_vector();
