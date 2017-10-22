@@ -1,13 +1,11 @@
-BIN=testboot
-cxxflags=-g -I/opt/boost/include
-ldlibs=-L.. -L/opt/boost/lib -lseispp -lgclgrid -lmwtpp  $(DBLIBS) $(TRLIBS) -lperf -lboost_serialization -lseispp 
 
-SUBDIR=/contrib
+all Include install installMAN pf relink tags test :: FORCED
+	@-if localmake_config boost ; then \
+	    $(MAKE) -f Makefile2 $@ ; \
+	fi
 
-include $(ANTELOPEMAKE)  	
-include $(ANTELOPEMAKELOCAL)
+clean uninstall :: FORCED
+	$(MAKE) -f Makefile2 $@
 
-OBJS=testboot.o
-$(BIN) : $(OBJS)
-	$(RM) $@
-	$(CXX) $(CCFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
+FORCED:
+
