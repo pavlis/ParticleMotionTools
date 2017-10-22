@@ -1,3 +1,4 @@
+#include <ctime>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 /* This little procedure was derived from the die.cpp example in
