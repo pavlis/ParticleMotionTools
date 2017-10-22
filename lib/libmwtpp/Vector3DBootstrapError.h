@@ -1,3 +1,5 @@
+#ifndef _VECTOR3DBOOTSTRAPERROR_H_
+#define _VECTOR3DBOOTSTRAPERROR_H_
 #include <vector>
 #include "dmatrix.h"
 /* This is a specialized implementation of the bootstrap to compute confidence intervals
@@ -52,3 +54,4 @@ interval in second.  Note return is range divided by 2 to be comparable to a
 sigma level */
 pair<double,double> bootstrap_mv(const vector<double>& x, 
     const double ci, const double ntrials);
+#endif
