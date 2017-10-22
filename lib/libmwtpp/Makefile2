@@ -1,5 +1,9 @@
 LIB=libmwtpp.a
-INCLUDE=MWTransform.h PMTimeSeries.h ParticleMotionEllipse.h ParticleMotionError.h
+INCLUDE=MWTransform.h \
+        PMTimeSeries.h \
+        ParticleMotionEllipse.h \
+        ParticleMotionError.h \
+        Vector3DBootstrapError.h
 LICENSES=LICENSE_libmwtpp
 SUBDIR=/contrib
 
