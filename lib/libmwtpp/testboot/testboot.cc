@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 {
   /* First create a set of normal deviates with mean 10 and sigma 1.  
      Use a most sample size */
-  const int nx(100);
+  const int nx(10);
   const double xmean(10.0);
   const double xsigma(1.0);
   vector<double> x;
