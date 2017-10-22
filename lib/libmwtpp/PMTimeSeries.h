@@ -31,10 +31,16 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
           \param d is the input data computed with the multiwavelet
              transform and formed into a 3C bundle.
           \param band is the band from which this is to be computed.
+          \param confidence specifies confidence level to compute using
+             bootstrap (default 95%).
+          \param bsmultiplier defines the number of trials to use in
+             computing bootstrap errors 
+             (number of trails=bsmultiplier*number_of_wavelets). 
 
           \exception SeisppError can be thrown for several illegal
              conditions. */
-        PMTimeSeries(MWTBundle& d, int band);
+        PMTimeSeries(MWTBundle& d, int band, 
+            double confidence=0.95,int bsmultiplier=100);
         /*! Construct for a specified band with time average.
 
           This will compute particle motions with a dual averaging
@@ -56,10 +62,16 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
             interval steps.  e.g. if 4 the output sample interval
             with be 4*dt given dt as the input sample interval.
           \param avlen is the number of samples for each time average.
+          \param confidence specifies confidence level to compute using
+             bootstrap (default 95%).
+          \param bsmultiplier defines the number of trials to use in
+             computing bootstrap errors 
+             (number of trails=bsmultiplier*number_of_wavelets). 
 
           \exception SeisppError can be thrown for several illegal
              conditions. */
-        PMTimeSeries(MWTBundle& d, int band,int timesteps, int avlen);
+        PMTimeSeries(MWTBundle& d, int band,int timesteps, int avlen,
+            double confidence=0.95,int bsmultiplier=100);
         /*! Standard copy constructor. */
         PMTimeSeries(const PMTimeSeries& parent);
         /*! \brief Return the ellipse by sample number.

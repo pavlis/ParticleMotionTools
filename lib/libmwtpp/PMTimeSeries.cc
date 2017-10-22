@@ -1,32 +1,8 @@
 #include <math.h>
+#include <cfloat>
 #include "PMTimeSeries.h"
+#include "Vector3DBootstrapError.h"
 using namespace SEISPP;
-void ComputePMStats(vector<ParticleMotionEllipse>& d,
-                ParticleMotionEllipse& avg, ParticleMotionError& err);
-/* These come from multiwavelet.h.   Extracted only these to avoid symbol
-   collisions if the entire file is included (complex number mismatch
-   between an older C code and C++).  MAINTENANCE ISSUE - WARNING. 
- Note that ComputePMStatis is effectively an interface routine
- between these structs and the new C++ version*/
-
-typedef struct Particle_Motion_Ellipse_{
-	double major[3];
-	double minor[3];
-	double rectilinearity;  
-} Particle_Motion_Ellipse;
-
-typedef struct Particle_Motion_Error_{
-	double dtheta_major,dphi_major;  /* errors in spherical coordinate
-					angles for major ellipse direction */
-	double dtheta_minor,dphi_minor;  /* same for minor axis */
-	double delta_rect;  /* error in rectilinearity */
-	int ndgf_major, ndgf_minor, ndgf_rect;  /* Degrees of freedom */
-} Particle_Motion_Error;
-extern "C" {
-void pmvector_average(Particle_Motion_Ellipse *, int ,
-              Particle_Motion_Ellipse *, Particle_Motion_Error *);
-}
-	
 /* Private method used by constructors once attributes are set to put
    private data into metadata object.   No need then for getters in
    the interface */
@@ -41,6 +17,125 @@ void PMTimeSeries::post_attributes_to_metadata()
     this->put("nsamp",ns);
     this->put("samprate",1.0/dt);
 }
+/* Helper procedure - returns a vector of data that are input
+   vector values converted to decibels. Throws an error if 
+   a value is negative unless it is very tiny  - defines as 
+   number less than FLT_EPSILON */
+vector<double> dbamp(vector<double>& x)
+{
+  int nx=x.size();
+  vector<double> result;
+  result.reserve(nx);
+  vector<double>::iterator xptr;
+  for(xptr=x.begin();xptr!=x.end();++xptr)
+  {
+    double valdb;
+    if((*xptr)<0.0)
+    {
+      if(fabs(*xptr)<FLT_EPSILON)
+        valdb=20.0*log10(FLT_EPSILON);
+      else
+        throw SeisppError(string("dbamp procedure: negative values in put array are nonsense"));
+    }
+    valdb=20.0*log10(*xptr);
+    result.push_back(valdb);
+  }
+  return result;
+}
+
+
+/*! Helper procedure.  Wrapper function for C libmultiwavelet
+  routine to estimate errors in particle motion ellipse parameters.
+  This procedure acts like a FORTRAN subroutine in that the average
+  particle motion and error estimates are returned as arguments.
+
+  This is a major revision from an earlier implemntation that
+  used a routine called pmvector_average in the old C multiwavelet
+  library.  Found that procedure produced errors that were too
+  large due to incorrect handling of multiple estimates of angles.
+  This version uses a new bootstrap error approach.
+
+arguments:
+  d - ensemble of ParticleMotionEllipse objects to be averaged
+  avg - average ParticleMotionEllipse
+  err - errors
+  */
+void ComputePMStats(vector<ParticleMotionEllipse>& d,
+        ParticleMotionEllipse& avg, ParticleMotionError& err,
+        double confidence_level, int number_of_trials)
+{
+  try{
+    /* This wrapper is a hideous inefficiency, but preferable to
+       rewriting pmvector_average which is quite complicated.  */
+    int nd=d.size();
+    int i,j;
+    vector<double> major_amps, minor_amps,rect;
+    major_amps.reserve(nd);
+    minor_amps.reserve(nd);
+    rect.reserve(nd);
+    /* These two hold normalized major and minor axis vectors */
+    dmatrix major(3,nd);
+    dmatrix minor(3,nd);
+    for(i=0;i<nd;++i)
+    {
+      /* We assume the vectors passed are already normalized to be
+      unit vectors - amplitude is contained in the majornrm and minornrm
+      vectors */
+        for(j=0;j<3;++j)
+        {
+            major(j,i)=d[i].major[j];
+            minor(j,i)=d[i].minor[j];
+        }
+        major_amps.push_back(d[i].majornrm);
+        minor_amps.push_back(d[i].minornrm);
+        rect.push_back(d[i].rectilinearity());
+    }
+    /* This is the old procedure that computed errors.  Replacing here
+    by bootstrap error estimation
+    Particle_Motion_Ellipse avgC;
+    Particle_Motion_Error errC;
+    pmvector_average(pmv,nd,&avgC,&errC); */
+    pair<double,double> majorampstats, minorampstats,rectstats;
+    vector<double> xdb=dbamp(major_amps);
+    majorampstats=bootstrap_mv(xdb,confidence_level,number_of_trials);
+    avg.majornrm=majorampstats.first;
+    err.dmajornrm=majorampstats.second;
+    xdb=dbamp(minor_amps);
+    minorampstats=bootstrap_mv(xdb,confidence_level,number_of_trials);
+    avg.minornrm=minorampstats.first;
+    err.dminornrm=minorampstats.second;
+    rectstats=bootstrap_mv(rect,confidence_level,number_of_trials);
+    //avg.rectilinearity=rectstats.first;
+    err.delta_rect=rectstats.second;
+    Vector3DBootstrapError majboot(major,confidence_level,number_of_trials);
+    Vector3DBootstrapError minboot(minor,confidence_level,number_of_trials);
+    /* For major we just copy the bootstrap mean */
+    vector<double> vmed;
+    vmed=majboot.mean_vector();
+    for(j=0;j<3;++j) avg.major[j] = vmed[j];  // assumes vmed is unit vector
+    /* For minor we want to force the vector to be perpendicular to major
+    axis vector.  Borrowed form old code */
+    double w[3],w2[3];
+    dr3cros(avg.major,&(vmed[0]),w);
+    dr3cros(w,avg.major,w2);
+    for(j=0;j<3;++j) avg.minor[j]=w2[j];
+    /* For this implementation we use the bootstrap error in the dot
+    product angle between resampled observations as estimate for the
+    error all angle terms.   Note these are retained as radians. */
+    double aerr=majboot.angle_error();
+    err.dtheta_major=aerr;
+    err.dphi_major=aerr;
+    aerr=majboot.angle_error();
+    err.dtheta_minor=aerr;
+    err.dphi_minor=aerr;
+    /* For degrees of freedom we set all to nd-1 */
+    err.ndgf_major=nd-1;
+    err.ndgf_minor=nd-1;
+    err.ndgf_rect=nd-1;
+    err.ndgf_major_amp=nd-1;
+    err.ndgf_minor_amp=nd-1;
+  }catch(...){throw;};
+}
 PMTimeSeries::PMTimeSeries() : Metadata(), BasicTimeSeries()
 {
     averaging_length=0;
@@ -49,7 +144,8 @@ PMTimeSeries::PMTimeSeries() : Metadata(), BasicTimeSeries()
     decfac=0;
 }
 
-PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
+PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
+    double confidence, int bsmultiplier)
     : Metadata(dynamic_cast<Metadata&>(d))
 {
     const string base_error("PMTimeSeries time averaging constructor:  ");
@@ -70,6 +166,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
     }
     int i,iw,it;
     try {
+        int nw=d.number_wavelets();
+        int ntrials=bsmultiplier*nw;
         /* First set the private scalar attributes, then move to 
            build the large data vectors */
         averaging_length=avlen;
@@ -80,7 +178,6 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         int iw,i;
         double up[3]={0.0,0.0,1.0};
         vector<MWTwaveform> x,y,z;
-        int nw=d.number_wavelets();
         x.reserve(nw);  y.reserve(nw);   z.reserve(nw);
         /* First load the component waveforms for this band in the x,y, and z vectors. */
         for(iw=0;iw<nw;++iw)
@@ -149,7 +246,7 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
             {
                 for(iw=0;iw<nw;++iw)
                     pmi.push_back(ParticleMotionEllipse(x[iw],y[iw],z[iw],tw,up));
-                ComputePMStats(pmi,avg,err);
+                ComputePMStats(pmi,avg,err,confidence,ntrials);
                 pmdata.push_back(avg);
                 pmerr.push_back(err);
                 pmi.clear();
@@ -164,7 +261,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen)
         live=true;
     }catch(...){throw;};
 }
-PMTimeSeries::PMTimeSeries(MWTBundle& d, int band)
+PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, double confidence,
+        int bsmultiplier)
     : Metadata(dynamic_cast<Metadata&>(d))
 {
     const string base_error("PMTimeSeries sample-by-sample constructor:  ");
@@ -177,6 +275,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band)
     }
     int i,iw,it;
     try {
+        int nw=d.number_wavelets();
+        int ntrials=nw*bsmultiplier;
         /* First set the private scalar attributes, then move to 
            build the large data vectors */
         averaging_length=1;
@@ -187,7 +287,6 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band)
         int iw,i;
         double up[3]={0.0,0.0,1.0};
         vector<MWTwaveform> x,y,z;
-        int nw=d.number_wavelets();
         x.reserve(nw);  y.reserve(nw);   z.reserve(nw);
         /* First load the component waveforms for this band in the x,y, and z vectors. */
         for(iw=0;iw<nw;++iw)
@@ -235,7 +334,7 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band)
             {
                 pmi.push_back(ParticleMotionEllipse(x[iw].s[i],y[iw].s[i],z[iw].s[i],up));
             }
-            ComputePMStats(pmi,avg,err);
+            ComputePMStats(pmi,avg,err,confidence,ntrials);
             pmdata.push_back(avg);
             pmerr.push_back(err);
             pmi.clear();
@@ -309,84 +408,6 @@ ParticleMotionError PMTimeSeries::errors(int i)
     }
     else
         return(pmerr[i]);
-}
-/*! Helper procedure.  Wrapper function for C libmultiwavelet
-  routine to estimate errors in particle motion ellipse parameters. 
-  This procedure acts like a FORTRAN subroutine in that the average
-  particle motion and error estimates are returned as arguments.  
-
-arguments:
-  d - ensemble of ParticleMotionEllipse objects to be averaged
-  avg - average ParticleMotionEllipse
-  err - errors
-  */
-void ComputePMStats(vector<ParticleMotionEllipse>& d, 
-        ParticleMotionEllipse& avg, ParticleMotionError& err)
-{
-    /* This wrapper is a hideous inefficiency, but preferable to 
-       rewriting pmvector_average which is quite complicated.  */
-    int nd=d.size();
-    int i,j;
-    Particle_Motion_Ellipse *pmv;
-    pmv = new Particle_Motion_Ellipse[nd];
-    vector<double> major_amps, minor_amps;
-    major_amps.reserve(nd);
-    minor_amps.reserve(nd);
-    for(i=0;i<nd;++i)
-    {
-        for(j=0;j<3;++j)
-        {
-            pmv[i].major[j]=d[i].major[j];
-            pmv[i].minor[j]=d[i].minor[j];
-        }
-        pmv[i].rectilinearity=d[i].rectilinearity();
-        major_amps.push_back(d[i].majornrm);
-        minor_amps.push_back(d[i].minornrm);
-    }
-    Particle_Motion_Ellipse avgC;
-    Particle_Motion_Error errC;
-    pmvector_average(pmv,nd,&avgC,&errC);
-    /* Now compute amplitude average and stdev as a 
-       simple average of log values.  Error will be
-       converted to dB at the end. */
-    double sumlnamp,sumlndelta;
-    for(i=0,sumlnamp=0.0;i<nd;++i)
-        sumlnamp += log10(major_amps[i]);
-    double major_amp_avg=sumlnamp/((double)nd);
-    for(i=0,sumlndelta=0.0;i<nd;++i)
-        sumlndelta = log10(major_amps[i]) / major_amp_avg;
-    double major_err=sumlndelta/((double)(nd-1));
-    /* Get rid of log for average */
-    avg.majornrm=pow(10.0,major_amp_avg);
-    /* Convert amplitude error to dB */
-    err.dmajornrm=20.0*major_err;
-    /* Now same for minor axis - repetitious but choice to not
-       add function overhead*/
-    for(i=0,sumlnamp=0.0;i<nd;++i)
-        sumlnamp += log10(minor_amps[i]);
-    double minor_amp_avg=sumlnamp/((double)nd);
-    for(i=0,sumlndelta=0.0;i<nd;++i)
-        sumlndelta = log10(minor_amps[i]) / minor_amp_avg;
-    double minor_err=sumlndelta/((double)(nd=1));
-    avg.minornrm=pow(10.0,minor_amp_avg);
-    err.dminornrm=20.0*minor_err;
-    /* Fill in particle motion average attributes */
-    for(j=0;j<3;++j)
-    {
-        avg.major[j]=avgC.major[j];
-        avg.minor[j]=avgC.minor[j];
-    }
-    /* Finally do the same for the error object. */
-    err.dtheta_major=errC.dtheta_major;
-    err.dphi_major=errC.dphi_major;
-    err.dtheta_minor=errC.dtheta_minor;
-    err.dphi_minor=errC.dphi_minor;
-    err.delta_rect=errC.delta_rect;
-    err.ndgf_major=errC.ndgf_major;
-    err.ndgf_minor=errC.ndgf_minor;
-    err.ndgf_rect=errC.ndgf_rect;
-    err.ndgf_major_amp=nd-1;
-    err.ndgf_minor_amp=nd-1;
 }
 void PMTimeSeries::zero_gaps()
 {
