@@ -8,7 +8,8 @@ MWTwaveform::MWTwaveform(MWtrace& mw) : ComplexTimeSeries(mw.nz)
     fw=mw.fw;
     /* Now set attributes in mw shared by ComplexTimeSeries*/
     ns=mw.nz;
-    dt=mw.dt;
+    /* Don't trust the dt in the MWtrace struct but compute it from decfac*/
+    dt=(mw.dt0)*decimation_factor;
     t0=mw.starttime;
     // Use of epoch time is implicity in MWtrace we force it 
     tref=absolute;
