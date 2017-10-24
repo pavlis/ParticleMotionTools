@@ -1,5 +1,6 @@
 #include <math.h>
 #include <cfloat>
+#include "perf.h"
 #include "PMTimeSeries.h"
 #include "Vector3DBootstrapError.h"
 using namespace SEISPP;
@@ -101,14 +102,21 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     pair<double,double> majorampstats, minorampstats,rectstats;
     vector<double> xdb=dbamp(major_amps);
     majorampstats=bootstrap_mv(xdb,confidence_level,number_of_trials);
-    avg.majornrm=majorampstats.first;
+    double nrmdb;
+    nrmdb=majorampstats.first;
+    /* We computed the average from log values - we need to get back to 
+     * original units. */
+    avg.majornrm=pow(10.0,nrmdb/20.0);
+    /* Note we leave error in db where it makes more sense */
     err.dmajornrm=majorampstats.second;
     xdb=dbamp(minor_amps);
     minorampstats=bootstrap_mv(xdb,confidence_level,number_of_trials);
-    avg.minornrm=minorampstats.first;
+    nrmdb=minorampstats.first;
+    avg.minornrm=pow(10.0,nrmdb/20.0);
     err.dminornrm=minorampstats.second;
     rectstats=bootstrap_mv(rect,confidence_level,number_of_trials);
-    //avg.rectilinearity=rectstats.first;
+    /*rectilinearity is derived from length of min and max axes as a method of
+     * ParticleMotionEllipse.  We thus save only the error estimate here */
     err.delta_rect=rectstats.second;
     Vector3DBootstrapError majboot(dmajor,confidence_level,number_of_trials);
     Vector3DBootstrapError minboot(dminor,confidence_level,number_of_trials);
@@ -117,20 +125,45 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     vmed=majboot.mean_vector();
     for(j=0;j<3;++j) avg.major[j] = vmed[j];  // assumes vmed is unit vector
     /* For minor we want to force the vector to be perpendicular to major
-    axis vector.  Borrowed form old code */
+    axis vector.  We do this with a pair of vector cross products. */
+    vmed=minboot.mean_vector();
     double w[3],w2[3];
+    double nrmw;
     dr3cros(avg.major,&(vmed[0]),w);
+    nrmw=dnrm2(3,w,1);
+    dscal(3,1.0/nrmw,w,1);
     dr3cros(w,avg.major,w2);
+    nrmw=dnrm2(3,w2,1);
+    dscal(3,1.0/nrmw,w2,1);
     for(j=0;j<3;++j) avg.minor[j]=w2[j];
     /* For this implementation we use the bootstrap error in the dot
     product angle between resampled observations as estimate for the
-    error all angle terms.   Note these are retained as radians. */
+    error all angle terms.  This has to be scaled by 1/sin(theta) for
+    azimuth for inclination the angle error is used directly.
+    Note all errors estimates are retained as radians. */
     double aerr=majboot.angle_error();
+    double vert[3]={0.0,0.0,1.0}; //vertical direction with our convention
+    double theta,vproj;
+    vproj=ddot(3,avg.major,1,vert,1);
+    theta=acos(theta);
+    /* This will be botched if theta is negative, which it will be if
+     * the vector has a downward component.  Hence this correction */
+    if(theta<0.0) theta=(-theta);
+    double multiplier=1.0/sin(theta);
+    err.dphi_major=aerr*multiplier;
+    if(err.dphi_major>M_PI) err.dphi_major=M_PI;
     err.dtheta_major=aerr;
-    err.dphi_major=aerr;
-    aerr=majboot.angle_error();
+    if(err.dtheta_major>M_PI) err.dtheta_major=M_PI;  //probably not necessary but useful
+    /* Similar for minor axis except we reuse the variables */
+    aerr=minboot.angle_error();
+    vproj=ddot(3,avg.minor,1,vert,1);
+    theta=acos(theta);
+    if(theta<0.0) theta=(-theta);
+    multiplier=1.0/sin(theta);
+    err.dphi_minor=aerr*multiplier;
+    if(err.dphi_minor>M_PI) err.dphi_minor=M_PI;
     err.dtheta_minor=aerr;
-    err.dphi_minor=aerr;
+    if(err.dtheta_minor>M_PI) err.dtheta_minor=M_PI;  
     /* For degrees of freedom we set all to nd-1 */
     err.ndgf_major=nd-1;
     err.ndgf_minor=nd-1;

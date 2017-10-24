@@ -74,16 +74,14 @@ Vector3DBootstrapError::Vector3DBootstrapError(dmatrix& x,
   //cout << "Computing array of dot products"<<endl;
   for(i=0;i<number_trials;++i)
   {
-    double dotprod,theta,nrmtrials;
+    double dotprod,theta_trial,nrmtrials;
     nrmtrials=dnrm2(3,trials.get_address(0,i),1);
     for(k=0,dotprod=0.0;k<3;++k)
     {
       dotprod += trials(k,i)*med[k]/nrmtrials;
     }
-    theta=acos(dotprod);
-    //DEBUG
-    //cout << "dotprod="<<dotprod<<" theta="<<theta<<endl;
-    work[i]=theta;
+    theta_trial=acos(dotprod);
+    work[i]=theta_trial;
   }
   sort(work.begin(),work.end());
   /* This angle error is one sided - we estimate the probability
