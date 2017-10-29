@@ -78,9 +78,24 @@ Vector3DBootstrapError::Vector3DBootstrapError(dmatrix& x,
     nrmtrials=dnrm2(3,trials.get_address(0,i),1);
     for(k=0,dotprod=0.0;k<3;++k)
     {
-      dotprod += trials(k,i)*med[k]/nrmtrials;
+      dotprod += trials(k,i)*med[k];
     }
-    theta_trial=acos(dotprod);
+    dotprod /= nrmtrials;
+    /* When all samples are the same dotprod can get close to one 
+     * and roundoff can lead to NaNs here.   fabs trap fixes that */
+    if(fabs(dotprod)>=1.0)
+    {
+        //DEBUG - return when verified this was the problem seen that led to this change
+        /*
+        cerr << "Vector3DBootstrapError constructor found dotprod="<<dotprod<<" which is greater than 1"
+            <<endl<<"Setting angle error to 0.0"<<endl;
+            */
+        theta_trial=0.0;
+    }
+    else
+    {
+        theta_trial=acos(dotprod);
+    }
     work[i]=theta_trial;
   }
   sort(work.begin(),work.end());
