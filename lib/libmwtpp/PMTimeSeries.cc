@@ -142,8 +142,6 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     azimuth for inclination the angle error is used directly.
     Note all errors estimates are retained as radians. */
     double aerr=majboot.angle_error();
-    //DEBUG
-    cerr << "mwpm:  minor axis dot product angle error="<<aerr<<endl;
     double vert[3]={0.0,0.0,1.0}; //vertical direction with our convention
     double theta,vproj;
     /* When the angle wrt vertical is less than this amount set the
