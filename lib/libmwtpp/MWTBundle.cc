@@ -8,11 +8,11 @@ MWTBundle::MWTBundle(ThreeComponentSeismogram& d,MWTransform& processor)
     put("U11",d.tmatrix[0][0]);
     put("U21",d.tmatrix[1][0]);
     put("U31",d.tmatrix[2][0]);
-    put("U21",d.tmatrix[0][1]);
+    put("U12",d.tmatrix[0][1]);
     put("U22",d.tmatrix[1][1]);
-    put("U23",d.tmatrix[2][1]);
-    put("U31",d.tmatrix[0][2]);
-    put("U32",d.tmatrix[1][2]);
+    put("U32",d.tmatrix[2][1]);
+    put("U13",d.tmatrix[0][2]);
+    put("U23",d.tmatrix[1][2]);
     put("U33",d.tmatrix[2][2]);
     /* The MW transform is a scalar operator so we need to split the 
        data into 3 scalar time series and then transform them.  */
