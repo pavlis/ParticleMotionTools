@@ -249,8 +249,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
            built. */
         double dtparent;
         dtparent = x[0].get_dt0();
-        this->dt=(double)dtparent*((double)decfac);;
-        this->ns=(x[0].ns)/decfac;
+        this->dt=x[0].dt;
+        this->ns=x[0].ns;
         this->tref=x[0].tref;
         this->t0=x[0].t0;
         this->live=false;   // Set this way in case we throw an error
@@ -293,13 +293,10 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
         pmi.reserve(nw);
         //assume x,y, and z have common start times 
         this->t0=x[0].t0+time_avlen/2.0;  //use centered time as reference
-        //this->dt=timesteps;
-        //cout << "x[0].endtime() is " << x[0].endtime() << endl;
-        double t;  // this is stare time of averaging window not center
+        double t;  // this is start time of averaging window not center
         for(i=0,t=(this->t0);i<ns;++i,t+=(this->dt))
         {
             TimeWindow tw(t,t+time_avlen);
-            //cout << tw.end << endl;
             if ( tw.end < x[0].endtime() )
             {
                 for(iw=0;iw<nw;++iw)
@@ -397,6 +394,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, double confidence,
             pmerr.push_back(err);
             pmi.clear();
         }
+        // Safer to force setting number of samples to actual size of data vector
+        this->ns=pmdata.size();
         this->post_attributes_to_metadata();
         live=true;
     }catch(...){throw;};
