@@ -249,7 +249,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
            built. */
         double dtparent;
         dtparent = x[0].get_dt0();
-        this->dt=x[0].dt;
+        /* sample interval is increased by the time step */
+        this->dt=(x[0].dt)*((double)timesteps);
         this->ns=x[0].ns;
         this->tref=x[0].tref;
         this->t0=x[0].t0;
@@ -337,6 +338,9 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, double confidence,
         averaging_length=1;
         f0=d.get_f0(band);
         fw=d.get_fw(band);
+        /* In this version the step size is always the sample interval
+         * so we don't have the complications in computing dt for 
+         * the constructor that uses time averaging (immediately above)*/
         dt=d.sample_interval(band);
         decfac=d.get_decfac(band);
         int iw,i;

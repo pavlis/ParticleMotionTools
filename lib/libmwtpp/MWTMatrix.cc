@@ -92,7 +92,12 @@ double MWTMatrix::get_f0(int nb)
 {
     if(nb>=0 && nb<nbands)
     {
-        return(d[nb].get_f0());
+        /* internal vector d is an implicit matrix stored with
+         * multiwavelets in order first.  Hence, we need to compute
+         * an offset with the nwavlets attribute to get the decimated
+         * value of f0 for other than band 0 */
+        int nbref=nb*nwavelets;
+        return(d[nbref].get_f0());
     }
     else
     {
@@ -108,7 +113,9 @@ double MWTMatrix::get_fw(int nb)
 {
     if(nb>=0 && nb<nbands)
     {
-        return(d[nb].get_fw());
+        /* as for gbet_f0 compute offset this way */
+        int nbref=nb*nwavelets;
+        return(d[nbref].get_fw());
     }
     else
     {
@@ -124,7 +131,9 @@ int MWTMatrix::get_decfac(int nb)
 {
     if(nb>=0 && nb<nbands)
     {
-        return(d[nb].get_decfac());
+        /* as for gbet_f0 compute offset this way */
+        int nbref=nb*nwavelets;
+        return(d[nbref].get_decfac());
     }
     else
     {
@@ -140,8 +149,9 @@ double MWTMatrix::sample_interval(int nb)
 {
     if(nb>=0 && nb<nbands)
     {
-        double dt0=d[nb].get_dt0();
-        return(dt0*((double)d[nb].get_decfac()));
+        int nbref=nb*nwavelets;
+        double dt0=d[nbref].get_dt0();
+        return(dt0*((double)d[nbref].get_decfac()));
     }
     else
     {
