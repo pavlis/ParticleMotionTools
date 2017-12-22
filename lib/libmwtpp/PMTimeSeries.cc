@@ -144,11 +144,6 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     double aerr=majboot.angle_error();
     double vert[3]={0.0,0.0,1.0}; //vertical direction with our convention
     double theta,vproj;
-    /* When the angle wrt vertical is less than this amount set the
-     * error to + or - 180 degrees.  Necessary to avoid NaN or at
-     * least huge errors when sin(theta) is near zero making multiplier
-     * huge. */
-    const double thetafloor(0.017453292519943); // this is one degree 
     vproj=ddot(3,avg.major,1,vert,1);
     theta=acos(vproj);
     /* This will be botched if theta is negative, which it will be if
@@ -157,11 +152,12 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     double multiplier;
     if(theta>thetafloor)
     {
-        multiplier=1.0/sin(theta);
+        /* this is defined in PMTimeSeries.h*/
+        if(theta>error_inclination_floor)
+            multiplier=1.0/sin(theta);
+        else
+            multiplier=1.0/sin(error_inclination_floor);
         err.dphi_major=aerr*multiplier;
-        /* Still put a ceiling on the error - angle errors larger than 180 
-         * wrap so that is the logical celing */
-        if(err.dphi_major>M_PI) err.dphi_major=M_PI;
     }
     else
     {
@@ -176,9 +172,12 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     if(theta<0.0) theta=(-theta);
     if(theta>thetafloor)
     {
-        multiplier=1.0/sin(theta);
+        /* this is defined in PMTimeSeries.h*/
+        if(theta>error_inclination_floor)
+            multiplier=1.0/sin(theta);
+        else
+            multiplier=1.0/sin(error_inclination_floor);
         err.dphi_minor=aerr*multiplier;
-        if(err.dphi_minor>M_PI) err.dphi_minor=M_PI;
     }
     else
     {

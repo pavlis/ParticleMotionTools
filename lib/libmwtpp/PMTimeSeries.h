@@ -19,6 +19,21 @@ using namespace SEISPP;
 /*! Metadata key that tags TimeSeries scalar metrics returned by
  * several methods in this object */
 const string PMDerivedTSType("DerivedTSDataType");
+/* Azimuth error estimates for particle motion data scale by
+ * 1/sin(inclination).   When inclinations are estimated very small 
+ * inclination estimates are common.   These two variables control
+ * how this is handled in construction of PMTimeSeries objects.   
+ * thetafloor is an absolute floor.   When the estimated inclination
+ * angle is less than this number (below 1 degree in radians) the
+ * azimuth errors are set to +-180 degrees (pi radians).  The second
+ * floor is the error_thetafloor variable.  When the inclination angle
+ * lies between thetafloor and error_thetafloor the azimuth error 
+ * estimate is scaled by 1/sin(error_thetafloor).   We could code that
+ * constant, but it would make this obscure for handling a rare event. 
+ * i.e. the cost of computing 1/sin(floor) - i.e. cosecant - is small.
+ * */
+const double thetafloor(0.017453292519943);
+const double error_inclination_floor(0.17453292519943);
 class PMTimeSeries : public BasicTimeSeries, public Metadata
 {
     public:
