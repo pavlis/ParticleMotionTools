@@ -150,7 +150,7 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
      * huge. */
     const double thetafloor(0.017453292519943); // this is one degree 
     vproj=ddot(3,avg.major,1,vert,1);
-    theta=acos(theta);
+    theta=acos(vproj);
     /* This will be botched if theta is negative, which it will be if
      * the vector has a downward component.  Hence this correction */
     if(theta<0.0) theta=(-theta);
@@ -172,7 +172,7 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
     /* Similar for minor axis except we reuse the variables */
     aerr=minboot.angle_error();
     vproj=ddot(3,avg.minor,1,vert,1);
-    theta=acos(theta);
+    theta=acos(vproj);
     if(theta<0.0) theta=(-theta);
     if(theta>thetafloor)
     {
