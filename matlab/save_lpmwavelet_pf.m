@@ -41,7 +41,7 @@ re=real(cw);
 im=imag(cw);
 for j=1:nw
 	for i=1:m
-		fprintf(fid,'%f %f\n',re(i,j),im(i,j));
+		fprintf(fid,'%20.16f %20.16f\n',re(i,j),im(i,j));
 	end
 end
 fprintf(fid,'}\n');
