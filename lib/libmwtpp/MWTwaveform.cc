@@ -11,6 +11,7 @@ MWTwaveform::MWTwaveform(MWtrace& mw) : ComplexTimeSeries(mw.nz)
     /* Don't trust the dt in the MWtrace struct but compute it from decfac*/
     dt=(mw.dt0)*decimation_factor;
     t0=mw.starttime;
+    wavelet_length=mw.basis->n;
     // Use of epoch time is implicity in MWtrace we force it 
     tref=absolute;
     /* note we drop endtime - a method in BasicTimeSeries */
@@ -34,6 +35,7 @@ MWTwaveform::MWTwaveform(MWtrace& mw) : ComplexTimeSeries(mw.nz)
     put("decimation_factor",decimation_factor);
     put("f0",f0);
     put("fw",fw);
+    put("wavelet_length_in_samples",wavelet_length);
 }
 MWTwaveform::MWTwaveform(const MWTwaveform& parent) : ComplexTimeSeries(parent)
 {
@@ -41,6 +43,7 @@ MWTwaveform::MWTwaveform(const MWTwaveform& parent) : ComplexTimeSeries(parent)
     decimation_factor=parent.decimation_factor;
     f0=parent.f0;
     fw=parent.fw;
+    wavelet_length=parent.wavelet_length;
 }
 MWTwaveform& MWTwaveform::operator=(const MWTwaveform& parent)
 {
@@ -51,6 +54,7 @@ MWTwaveform& MWTwaveform::operator=(const MWTwaveform& parent)
         decimation_factor=parent.decimation_factor;
         f0=parent.f0;
         fw=parent.fw;
+        wavelet_length=parent.wavelet_length;
     }
     return(*this);
 }
