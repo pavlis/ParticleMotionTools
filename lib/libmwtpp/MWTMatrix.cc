@@ -163,6 +163,22 @@ double MWTMatrix::sample_interval(int nb)
         throw SeisppError(ss.str());
     }
 }
+int MWTMatrix::get_wavelet_length(int nb)
+{
+    if(nb>=0 && nb<nbands)
+    {
+        return d[nb].get_wavelet_length();
+    }
+    else
+    {
+        stringstream ss;
+        ss << "MWTMatrix::get_wavelet_length(int band):  "
+        << "Illegal request for band="<<nb
+        << "Data range: number bands="<<nbands
+        <<endl;
+        throw SeisppError(ss.str());
+    }
+}
 string MWTMatrix::range_test(int ib, int iw)
 {
     if( (ib<0) || (ib>=nbands) || (iw<0) || (iw>=nwavelets) )

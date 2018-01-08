@@ -212,6 +212,7 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         void zero_gaps();
         /*! Standard assignment operator */
         PMTimeSeries& operator=(const PMTimeSeries& parent);
+        double get_wavelet_duration(){return wavelet_duration;};
         /*! \brief Output data as ascii text.
 
           The intent of this procedure is to output the data from
@@ -228,6 +229,10 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         int averaging_length;
         double f0,fw;
         int decfac;
+        /* Because we allow step the duration of the wavelet is stored
+         * as a time interval. In MWTMatrix this is save by number of
+         * samples */
+        double wavelet_duration;
         void post_attributes_to_metadata();
         friend class boost::serialization::access;
         template<class Archive>
@@ -240,6 +245,13 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
             ar & f0;
             ar & fw;
             ar & decfac;
+            /* This was an add on with significant amounts of data
+             * stored without it.  This uses the method described
+             * in the serialization tutorial to handle data versions.
+             */
+            if(version>0)
+                ar & wavelet_duration;
         };
 };
+BOOST_CLASS_VERSION(PMTimeSeries,1);
 #endif

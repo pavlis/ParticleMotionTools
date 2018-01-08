@@ -146,6 +146,16 @@ int MWTBundle::get_decfac(int band)
         throw SeisppError(base_error
                 + bok);
 }
+int MWTBundle::get_wavelet_length(int band)
+{
+    const string base_error("MWTBundle::get_wavelet_length:  ");
+    string bok=band_valid_test(band);
+    if(bok=="ok")
+        return(mwtdata[0].get_wavelet_length(band));
+    else
+        throw SeisppError(base_error
+                + bok);
+}
 double MWTBundle::sample_interval(int band)
 {
     const string base_error("MWTBundle::sample_interval:  ");

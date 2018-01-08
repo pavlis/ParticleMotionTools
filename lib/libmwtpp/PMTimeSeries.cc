@@ -17,6 +17,7 @@ void PMTimeSeries::post_attributes_to_metadata()
        to be sure */
     this->put("nsamp",ns);
     this->put("samprate",1.0/dt);
+    this->put("wavelet_duration",wavelet_duration);
 }
 /* Helper procedure - returns a vector of data that are input
    vector values converted to decibels. Throws an error if 
@@ -199,6 +200,7 @@ PMTimeSeries::PMTimeSeries() : Metadata(), BasicTimeSeries()
     f0=0.0;
     fw=0.0;
     decfac=0;
+    wavelet_duration=0.0;
 }
 
 PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
@@ -232,6 +234,11 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
         fw=d.get_fw(band);
         //dt=d.sample_interval(band);
         decfac=d.get_decfac(band)*timesteps;
+        /* We compute the time duration of the wavelet used.  transform
+         * has this is samples bu the complexity of timesteps being other
+         * than 1 requires we compute it in seconds */
+        wavelet_duration=(d.sample_interval(band))
+                         *((double)(d.get_wavelet_length(band)));
         int iw,i;
         double up[3]={0.0,0.0,1.0};
         vector<MWTwaveform> x,y,z;
@@ -342,6 +349,11 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, double confidence,
          * the constructor that uses time averaging (immediately above)*/
         dt=d.sample_interval(band);
         decfac=d.get_decfac(band);
+        /* We compute the time duration of the wavelet used.  transform
+         * has this is samples bu the complexity of timesteps being other
+         * than 1 requires we compute it in seconds */
+        wavelet_duration=(d.sample_interval(band))
+                         *((double)(d.get_wavelet_length(band)));
         int iw,i;
         double up[3]={0.0,0.0,1.0};
         vector<MWTwaveform> x,y,z;
@@ -412,6 +424,7 @@ PMTimeSeries::PMTimeSeries(const PMTimeSeries& parent)
     fw=parent.fw;
     averaging_length=parent.averaging_length;
     decfac=parent.decfac;
+    wavelet_duration=parent.wavelet_duration;
 }
 
 PMTimeSeries& PMTimeSeries::operator=(const PMTimeSeries& parent)
@@ -422,6 +435,7 @@ PMTimeSeries& PMTimeSeries::operator=(const PMTimeSeries& parent)
         fw=parent.fw;
         averaging_length=parent.averaging_length;
         decfac=parent.decfac;
+        wavelet_duration=parent.wavelet_duration;
         this->BasicTimeSeries::operator=(parent);
         this->Metadata::operator=(parent);
         this->pmdata=parent.pmdata;

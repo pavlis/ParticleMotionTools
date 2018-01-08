@@ -51,12 +51,14 @@ public:
     double get_fw(){return fw;};
     double get_dt0(){return dt0;};
     double get_decfac(){return decimation_factor;};
+    int get_wavelet_length(){return wavelet_length;};
 private:
     /* These attributes are cloned from MWtrace. Other parts of MWtrace
      map to ComplexTimeSeries attributes*/
     double dt0;
     int decimation_factor;
     double f0,fw;
+    int wavelet_length;
 };
 
 /*! \brief transform methods all return this object that is the transform
@@ -91,6 +93,7 @@ public:
     double sample_interval(int nb);
     int get_nbands(){return nbands;};
     int get_nwavelets(){return nwavelets;};
+    int get_wavelet_length(int nb);
 private:
     int nbands;
     int nwavelets;
@@ -241,7 +244,8 @@ public:
     int number_time_steps(int band);
     double get_f0(int band);
     double get_fw(int band);
-    int get_decfac(int bands);
+    int get_decfac(int band);
+    int get_wavelet_length(int band);
     double sample_interval(int band);
     MWTBundle& operator=(const MWTBundle& parent);
     /* \brief Extract a single seismogram like object.
