@@ -10,10 +10,11 @@ SUBDIR=/contrib
 include $(ANTELOPEMAKE)
 include $(ANTELOPEMAKELOCAL)
 
-CXXFLAGS +=  -I$(BOOSTINCLUDE) -O2
-#CXXFLAGS += -g -I$(BOOSTINCLUDE) 
+#CXXFLAGS +=  -I$(BOOSTINCLUDE) -O2
+CXXFLAGS += -g -I$(BOOSTINCLUDE) 
 OBJS=MWTBundle.o MWTransform.o MWTMatrix.o MWTdata.o MWTwaveform.o \
          ParticleMotionEllipse.o ParticleMotionError.o  PMTimeSeries.o \
+	 regularize_angle.o \
          Vector3DBootstrapError.o random_array_index.o
 MWTBundle.cc : MWTransform.h
 MWTMatrix.cc : MWTransform.h 
