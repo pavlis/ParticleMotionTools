@@ -259,7 +259,8 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
         this->dt=(x[0].dt)*((double)timesteps);
         this->ns=x[0].ns;
         this->tref=x[0].tref;
-        this->t0=x[0].t0;
+        //this->t0=x[0].t0;
+        double t0test=x[0].t0;
         this->live=false;   // Set this way in case we throw an error
         /* These floats are in units of s - derived from steps in samples */
         double time_avlen=(dtparent)*((double)(avlen));
@@ -274,7 +275,7 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
                     << iw<<endl;
                 throw SeisppError(base_error + ss.str());
             }
-            if((x[iw].t0!=t0) || (y[iw].t0!=t0) || (z[iw].t0!=t0) )
+            if((x[iw].t0!=t0test) || (y[iw].t0!=t0test) || (z[iw].t0!=t0test) )
             {
                 stringstream ss;
                 ss << "Start time mismatch in ComplexTimeSeries components for wavelet="
@@ -301,7 +302,9 @@ PMTimeSeries::PMTimeSeries(MWTBundle& d, int band, int timesteps, int avlen,
         //assume x,y, and z have common start times 
         this->t0=x[0].t0+time_avlen/2.0;  //use centered time as reference
         double t;  // this is start time of averaging window not center
-        for(i=0,t=(this->t0);i<ns;++i,t+=(this->dt))
+        /* t initialization makes the average window centered on averaging
+         * window */
+        for(i=0,t=(this->t0)+time_avlen/2.0;i<ns;++i,t+=(this->dt))
         {
             TimeWindow tw(t,t+time_avlen);
             if ( tw.end < x[0].endtime() )
