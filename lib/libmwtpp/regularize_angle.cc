@@ -24,14 +24,14 @@ double regularize_angle(double phi,bool radians=false)
         {
             while(phi>M_PI)
             {
-                phi -= M_PI;
+                phi -= 2.0*M_PI;
             }
         }
         else if(phi<(-M_PI))
         {
             while(phi<M_PI)
             {
-                phi += M_PI;
+                phi += 2.0*M_PI;
             }
         }
     }
@@ -41,14 +41,14 @@ double regularize_angle(double phi,bool radians=false)
         {
             while(phi>180.0)
             {
-                phi -= 180.0;
+                phi -= 360.0;
             }
         }
         else if(phi<(-180.0))
         {
             while(phi<180.0)
             {
-                phi += 180.0;
+                phi += 360.0;
             }
         }
     }
