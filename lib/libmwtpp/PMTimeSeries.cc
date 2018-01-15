@@ -74,6 +74,27 @@ void ComputePMStats(vector<ParticleMotionEllipse>& d,
        rewriting pmvector_average which is quite complicated.  */
     int nd=d.size();
     int i,j;
+    /* First test for null data and return null average and error
+     * if all the d values are zeros.  As always in floating point
+     * tests this has to make an assumption that the units of the 
+     * such that the data sample amplitudes are large compared to 
+     * epsilon*/
+    bool zerotest(true);
+    for(i=0;i<nd;++i)
+    {
+        if((fabs(d[i].majornrm)>FLT_EPSILON) 
+                || (fabs(d[i].minornrm)>FLT_EPSILON) )
+        {
+            zerotest=false;
+            break;
+        }
+    }
+    if(zerotest)
+    {
+        avg=ParticleMotionEllipse();
+        err=ParticleMotionError();
+        return;
+    }
     vector<double> major_amps, minor_amps,rect;
     major_amps.reserve(nd);
     minor_amps.reserve(nd);
