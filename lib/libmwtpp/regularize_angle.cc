@@ -12,7 +12,7 @@
   \throw SeisppError if the input angle is absurd.
   \return angle in standard range
   */
-double regularize_angle(double phi,bool radians=false)
+double regularize_angle(double phi,bool radians)
 {
     /* This is a necessary sanity check to avoid large unnecessary effort 
      * reducing an absurd number to standard range*/

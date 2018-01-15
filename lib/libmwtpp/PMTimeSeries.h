@@ -254,4 +254,5 @@ class PMTimeSeries : public BasicTimeSeries, public Metadata
         };
 };
 BOOST_CLASS_VERSION(PMTimeSeries,1);
+double regularize_angle(double d,bool r=false);
 #endif
