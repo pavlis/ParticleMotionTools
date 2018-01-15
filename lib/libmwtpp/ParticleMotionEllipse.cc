@@ -235,7 +235,12 @@ double ParticleMotionEllipse::major_inclination()
 }
 double ParticleMotionEllipse::major_azimuth()
 {
-    return(M_PI_2 - atan2(major[1],major[0]));
+    double az;
+    if(fabs(major[0]<FLT_EPSILON) && (fabs(major[1])<FLT_EPSILON))
+      az=0.0;
+    else
+      az=M_PI_2 - atan2(major[1],major[0]);
+    return az;
 }
 double ParticleMotionEllipse::minor_inclination()
 {
@@ -243,7 +248,12 @@ double ParticleMotionEllipse::minor_inclination()
 }
 double ParticleMotionEllipse::minor_azimuth()
 {
-    return(M_PI_2 - atan2(minor[1],minor[0]));
+    double az;
+    if(fabs(minor[0]<FLT_EPSILON) && (fabs(minor[1])<FLT_EPSILON))
+      az=0.0;
+    else
+      az=M_PI_2 - atan2(minor[1],minor[0]);
+    return az;
 }
 dmatrix ParticleMotionEllipse::points(int n)
 {
