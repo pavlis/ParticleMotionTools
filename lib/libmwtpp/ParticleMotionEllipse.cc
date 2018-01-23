@@ -148,11 +148,32 @@ ParticleMotionEllipse::ParticleMotionEllipse(ComplexTimeSeries& x,
         ComplexTimeSeries yw=WindowData<ComplexTimeSeries>(y,w);
         ComplexTimeSeries zw=WindowData<ComplexTimeSeries>(z,w);
         int ntw=xw.s.size();  // assume all the same length
+        int i,ia;
+        /* Test for all zeros - required sometimes with synthetic data
+         * tests.   Without this we get nans and all kind of nasty things.
+         * As always tests against zero are a tad ambiguous.   with 
+         * seismic data actual sample values are always large enough that
+         * this test should work reliably*/
+        bool zerotest(true);
+        for(i=0;i<ntw;++i)
+        {
+            if( (std::abs(xw.s[i])>FLT_EPSILON) 
+                    || (std::abs(yw.s[i])>FLT_EPSILON)
+                    || (std::abs(zw.s[i])>FLT_EPSILON) )
+            {
+                zerotest=false;
+                break;
+            }
+        }
+        if(zerotest)
+        {
+            (*this) = ParticleMotionEllipse();
+            return;
+        }
         A = (FORTRAN_complex *)calloc(3*ntw,sizeof(FORTRAN_complex));
         if(A==NULL) throw SeisppError(base_error
                 + "calloc failed for principal component work matrix");
         /* Load A in fortran complex order and call the lapack svd routine*/
-        int i,ia;
         for(i=0,ia=0;i<ntw;++i,ia+=3)
         {
             A[ia].r=(float)xw.s[i].real();
@@ -235,7 +256,12 @@ double ParticleMotionEllipse::major_inclination()
 }
 double ParticleMotionEllipse::major_azimuth()
 {
-    return(M_PI_2 - atan2(major[1],major[0]));
+    double az;
+    if(fabs(major[0]<FLT_EPSILON) && (fabs(major[1])<FLT_EPSILON))
+      az=0.0;
+    else
+      az=M_PI_2 - atan2(major[1],major[0]);
+    return az;
 }
 double ParticleMotionEllipse::minor_inclination()
 {
@@ -243,7 +269,12 @@ double ParticleMotionEllipse::minor_inclination()
 }
 double ParticleMotionEllipse::minor_azimuth()
 {
-    return(M_PI_2 - atan2(minor[1],minor[0]));
+    double az;
+    if(fabs(minor[0]<FLT_EPSILON) && (fabs(minor[1])<FLT_EPSILON))
+      az=0.0;
+    else
+      az=M_PI_2 - atan2(minor[1],minor[0]);
+    return az;
 }
 dmatrix ParticleMotionEllipse::points(int n)
 {
